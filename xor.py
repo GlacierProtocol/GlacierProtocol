@@ -5,6 +5,7 @@
 import argparse
 import sys
 import hashlib
+from hashlib import sha256
 
 #### Begin portion copyrighted by David Keijser #####
 
@@ -28,7 +29,6 @@ import hashlib
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-from hashlib import sha256
 
 # 58 character alphabet used
 alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
@@ -186,13 +186,27 @@ def read_seed_interactive(min_length):
 
 #### main functions #####
 
+def seed_to_WIF(seed):
+  seed_80 = "80" + seed
+
+  key = seed_80 + checksum(seed_80)
+  print key
+
+  key_58 = b58encode(key.decode("hex"))
+  print key_58
+  return key_58
+  
+
+def hashSha256(s):
+  """A thin wrapper around the hashlib sha 256 library to provide a more functional interface"""
+  m = sha256()
+  m.update(s)
+  return m.hexdigest()
+
 def checksum(s):
-  m1 = hashlib.sha256()
-  m1.update(s.decode("hex"))
-  h1 = m1.digest()
-  m2 = hashlib.sha256()
-  m2.update(h1)
-  h2 = m2.hexdigest()
+  h1 = hashSha256(s.decode("hex"))
+  print h1
+  h2 = hashSha256(h1.decode("hex"))
   print h2[0:8]
   return h2[0:8]
 
@@ -201,45 +215,23 @@ def main_interactive(dice_length = 62, seed_length = 20):
   # dice_string = read_dice_interactive(dice_length)
   dice_string = "123425362526352316253516215216351525112515236121213423423412312"
   
-  # subtract one from the dice, to get a base 6 number 
-  dice_string = "".join([str(int(c) - 1) for c in dice_string])
-
-  # get a decimal number from the dice string
-  dice_dec = int(dice_string, 6)
-
-  # print "bit length of dice is {0}".format(dice_dec.bit_length())
+  dice_hash = hashSha256(dice_string)
 
   # seed_string = read_seed_interactive(seed_length)
   seed_string = "fbbc1ebe258b549f32bbff7adabb4cb3d1a1321935345a5eddc157bef20fb7d0"
+  seed_hash = hashSha256(seed_string)
 
-  # get a decimal number from the seed string
-  seed_dec = int(seed_string, 16)
+  # get decimal numbers and bitwise or them
+  dice_dec = int(dice_hash, 16)
+  seed_dec = int(seed_hash, 16)
 
-  # print "bit length of seed is {0}".format(seed_dec.bit_length())
-  
   xored = seed_dec ^ dice_dec
 
   # print xored
-  xor_hex = "{:02x}".format(xored)
-
-  print xor_hex
-  m = hashlib.sha256()
-  m.update(xor_hex)
-
-  # this is our "private key"
-  xor_key = m.hexdigest()
-  print xor_key
-
-  xor_key_80 = "80" + xor_key
-
-  key = xor_key_80 + checksum(xor_key_80)
-  print key
-
-  key_58 = b58encode(key.decode("hex"))
-  print key_58
-
-  # turns number in decimal representation to a hex string
-  return xor_key
+  combined_seed = "{:02x}".format(xored)
+  print "combined seed:", combined_seed
+  
+  return seed_to_WIF(combined_seed)
 
 
 if __name__ == "__main__": 
