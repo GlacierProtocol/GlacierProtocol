@@ -189,14 +189,14 @@ def read_seed_interactive(min_length):
 
 #### main private key creation functions #####
 
-def seed_to_WIF(seed):
+def seed_to_privkey(seed):
   seed_80 = "80" + seed
-
   key = seed_80 + checksum(seed_80)
-  print key
+  return key
 
+
+def key_to_WIF(key):
   key_58 = b58encode(key.decode("hex"))
-  print key_58
   return key_58
   
 
@@ -208,33 +208,43 @@ def hashSha256(s):
 
 def checksum(s):
   h1 = hashSha256(s.decode("hex"))
-  print h1
   h2 = hashSha256(h1.decode("hex"))
-  print h2[0:8]
   return h2[0:8]
 
 
 def wif_interactive(dice_length = 62, seed_length = 20):
-  # dice_string = read_dice_interactive(dice_length)
-  dice_string = "223425362526352316253516215216351525112515236121213423423412312"
-  
+
+  dice_string = read_dice_interactive(dice_length)
   dice_hash = hashSha256(dice_string)
 
-  # seed_string = read_seed_interactive(seed_length)
-  seed_string = "fbbc1ebe258b549f32bbff7adabb4cb3d1a1321935345a5eddc157bef20fb7d0"
+  seed_string = read_seed_interactive(seed_length)
   seed_hash = hashSha256(seed_string)
 
-  # get decimal numbers and bitwise or them
+  # get decimal numbers and bitwise-or them
   dice_dec = int(dice_hash, 16)
   seed_dec = int(seed_hash, 16)
 
   xored = seed_dec ^ dice_dec
 
-  # print xored
+  # back to hex string
   combined_seed = "{:02x}".format(xored)
-  print "combined seed:", combined_seed
-  
-  return seed_to_WIF(combined_seed)
+
+
+  privkey = seed_to_privkey(combined_seed)
+  print ""
+  print "Your private key (hex):"
+  print privkey
+  print ""
+
+  privkey_WIF = key_to_WIF(privkey)
+  print "Your private key (WIF):"
+  print privkey_WIF
+  print ""
+
+  address = get_address_for_privkey(privkey_WIF)
+  print "Your Bitcoin address:"
+  print address
+  print ""
 
 
 #### multisig creation functions #####
@@ -253,6 +263,10 @@ def get_address_for_privkey(privkey):
 
 def get_multisig_interactive(m,n):
   """Asks user for n bitcoin addresses. Returns an m of n multisig address and redeem script"""
+  
+  print "Creating {0}-of-{1} multisig address....".format(m, n)
+  print ""
+
   addrs = []
   while len(addrs) < n:
     print "enter address #{0}:".format(len(addrs) + 1)
@@ -265,8 +279,13 @@ def get_multisig_interactive(m,n):
   argstring = "{0} '{1}'".format(m, addrs_string)
 
   results = subprocess.check_output("bitcoin-cli createmultisig {0}".format(argstring), shell=True)
+  results = json.loads(results)
   
-  return json.loads(results)
+  print ""
+  print "Redeem script: {0}".format(results["redeemScript"])
+  print ""
+  print "Multisig address: {0}".format(results["address"])
+  print ""
 
 
 #### multisig redemption functions ####
@@ -281,14 +300,13 @@ def multisig_gen_trx(dest_addr, amount, redeem_script, in_txid, in_vout, in_scri
   in_output_script: the scriptPubKey of the output
   privkeys: an array of private keys to sign with"""
 
-  print "dest_addr", dest_addr
-  print "amount", amount
-  print "in_txid", in_txid
-  print "vout", in_vout
-  print "in_script_pub_key", in_script_pub_key
-  print "privkeys", privkeys
-  print "redeem_script", redeem_script
-
+  # print "dest_addr", dest_addr
+  # print "amount", amount
+  # print "in_txid", in_txid
+  # print "vout", in_vout
+  # print "in_script_pub_key", in_script_pub_key
+  # print "privkeys", privkeys
+  # print "redeem_script", redeem_script
 
   data_1 = [{
    "txid": in_txid,
@@ -347,6 +365,7 @@ def multisig_withdraw_interactive():
 
     correctyn = False
     while not correctyn:
+      print ""
       print "Is this data correct(y/n)?"
       print "WARNING: incorrect data may lead to loss of funds"
       print "destination address: {0}".format(address)
@@ -376,12 +395,27 @@ def multisig_withdraw_interactive():
   return signed_tx_hex
 
 
-if __name__ == "__main__": 
+if __name__ == "__main__":
+  parser = argparse.ArgumentParser()
+  parser.add_argument('program', choices=['keygen', 'multisig-deposit', 'multisig-withdraw'])
 
-  
-  multisig_withdraw_interactive()
+  parser.add_argument("-d", "--dice", type=int, help="The minimum number of dice rolls to use for entropy when generating private keys (default: 64)", default=64)
+  parser.add_argument("-s", "--seed", type=int, help="Minimum number of 8-bit bytes to use for seed entropy when generating private keys (default: 20)", default=20)
+  parser.add_argument("-m", type=int, help="Number of signing keys required in an m-of-n multisig address creation (default m-of-n = 1-of-2)", default=1)
+  parser.add_argument("-n", type=int, help="Number of total keys required in an m-of-n multisig address creation (default m-of-n = 1-of-2)", default=2)
+  args = parser.parse_args()
+
+  if args.program == "keygen":
+    wif_interactive(dice_length = args.dice, seed_length = args.seed)
+
+  if args.program == "multisig-deposit":
+    get_multisig_interactive(args.m, args.n)
+
+  if args.program == "multisig-withdraw":
+    multisig_withdraw_interactive()
 
 
+  # get_multisig_interactive(1,2)
   # wif_interactive()
   # print get_address_for_privkey("5JHLk1zFzbDY7jJS6RdmZYqHEv5J89NpVC7teru7xrhghqo53mf")
 
