@@ -300,14 +300,6 @@ def multisig_gen_trx(dest_addr, amount, redeem_script, in_txid, in_vout, in_scri
   in_output_script: the scriptPubKey of the output
   privkeys: an array of private keys to sign with"""
 
-  # print "dest_addr", dest_addr
-  # print "amount", amount
-  # print "in_txid", in_txid
-  # print "vout", in_vout
-  # print "in_script_pub_key", in_script_pub_key
-  # print "privkeys", privkeys
-  # print "redeem_script", redeem_script
-
   data_1 = [{
    "txid": in_txid,
    "vout": int(in_vout)
@@ -427,16 +419,4 @@ if __name__ == "__main__":
 
   if args.program == "multisig-withdraw":
     multisig_withdraw_interactive()
-
-
-  # get_multisig_interactive(1,2)
-  # wif_interactive()
-  # print get_address_for_privkey("5JHLk1zFzbDY7jJS6RdmZYqHEv5J89NpVC7teru7xrhghqo53mf")
-
-  # print get_multisig_interactive(1,2)
-  # print multisig_gen_trx("14bdjdoN2orodNcPaq5iVd8aSToKKn7cnN", 0.00020000, "51410421167f7dac2a159bc3957e3498bb6a7c2f16874bf1fbbe5b523b3632d2c0c43f1b491f6f2f449ae45c9b0716329c0c2dbe09f3e5d4e9fb6843af083e222a70a441043704eafafd73f1c32fafe10837a69731b93c0179fa268fc325bdc08f3bb3056b002eac4fa58c520cc3f0041a097232afbe002037edd5ebdab2e493f18ef19e9052ae",
-  #   "5a507797946da2310ddbc6820e1115ca6d640ab499cb1748db316030c269cb62", 0, "a914f1e3f2ba9971cf5f82daf0f8fe6b4c999f4dfc3587", ["5JHLk1zFzbDY7jJS6RdmZYqHEv5J89NpVC7teru7xrhghqo53mf", "5JH4aEVfQgfjC4tZ394sWyGv8NqLMPd3XmwVtnJ1cKwksYQqan6"])
-
-
-
 
