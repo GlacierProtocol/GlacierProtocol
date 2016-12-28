@@ -271,31 +271,106 @@ def get_multisig_interactive(m,n):
 
 #### multisig redemption functions ####
 
-def multisig_gen_trx(dest_addr, amount, redeem_script, in_txid, in_vout, in_ouput_script, privkeys):
+def multisig_gen_trx(dest_addr, amount, redeem_script, in_txid, in_vout, in_script_pub_key, privkeys):
+  """generate a signed multisig transaction
+  dest_addr: base58 bitcoin address
+  amount: amount in bitcoins
+  redeem_script: hex string,
+  in_txid: txid of an input transaction to the multisig address
+  in_vout: which output you are sending
+  in_output_script: the scriptPubKey of the output
+  privkeys: an array of private keys to sign with"""
+
+  print "dest_addr", dest_addr
+  print "amount", amount
+  print "in_txid", in_txid
+  print "vout", in_vout
+  print "in_script_pub_key", in_script_pub_key
+  print "privkeys", privkeys
+  print "redeem_script", redeem_script
+
+
   data_1 = [{
    "txid": in_txid,
-   "vout": in_vout
+   "vout": int(in_vout)
   }]
   dest_data_1 = {
     dest_addr: amount
   }
   argstring_1 = "'{0}' '{1}'".format(json.dumps(data_1), json.dumps(dest_data_1))
-  print argstring_1
 
   tx_hex = subprocess.check_output("bitcoin-cli createrawtransaction {0}".format(argstring_1), shell=True).strip()
 
-  print tx_hex
-  
   data_2 = [{
     "txid": in_txid,
-    "vout": in_vout,
-    "scriptPubKey": in_ouput_script,
+    "vout": int(in_vout),
+    "scriptPubKey": in_script_pub_key,
     "redeemScript": redeem_script
   }]
 
   argstring_2 = "{0} '{1}' '{2}'".format(tx_hex, json.dumps(data_2), json.dumps(privkeys))
   signed_tx_hex = subprocess.check_output("bitcoin-cli signrawtransaction {0}".format(argstring_2), shell=True).strip()
 
+  return signed_tx_hex
+
+
+def multisig_withdraw_interactive():
+  """Interactive script for withdrawing coins from a multisig address"""
+  #dest_addr, amount, redeem_script, in_txid, in_vout, in_script_pub_key, privkeys
+  
+  approve = False
+
+  while not approve: 
+    print "Welcome to the multisig funds withdrawal script!"
+    address = raw_input("destination address:")
+
+    print "For the next steps, you need several pieces of information from an input transaction (see guide)"
+    txid = raw_input("input txid:")
+    vout = raw_input("input vout:")
+    script_pub_key = raw_input("input scriptPubKey (hex):")
+
+    print "how many private keys will you be signing with?"
+    key_count = int(raw_input("#:"))
+    print key_count
+
+    keys = []
+    while len(keys) < key_count:
+      key = raw_input("key #{0}".format(len(keys) + 1))
+      keys.append(key)
+
+    print "please enter the amount (in bitcoin) to withdraw"
+    print "WARNING: all unwithdrawn funds will be sent as miner fees"
+    amount = raw_input("amount (BTC):")
+
+    print "Please provide the redeem script for this multisig address."
+    redeem_script = raw_input("redeem script:")
+
+    correctyn = False
+    while not correctyn:
+      print "Is this data correct(y/n)?"
+      print "WARNING: incorrect data may lead to loss of funds"
+      print "destination address: {0}".format(address)
+      print "amount: {0}".format(amount)
+      print "input txid: {0}".format(txid)
+      print "input vout: {0}".format(vout)
+      print "input scriptPubKey (hex): {0}".format(script_pub_key)
+      print "private keys: {0}".format(keys)
+      print "redeem script: {0}".format(redeem_script)
+      yn = raw_input("y/n?")
+      if yn.upper() in ["Y","N"]:
+        correctyn = True
+      else: 
+        print "\nYou must enter y or n to approve or disprove the transaction\n"
+      if yn.upper() == "Y":
+        approve = True
+      else:
+        print "starting over"
+
+  print "\ncalculating transaction.....\n"
+
+  signed_tx_hex = multisig_gen_trx(address, amount, redeem_script, txid, vout, script_pub_key, keys)
+
+  print "signed transaction (hex):"
   print signed_tx_hex
 
   return signed_tx_hex
@@ -303,11 +378,17 @@ def multisig_gen_trx(dest_addr, amount, redeem_script, in_txid, in_vout, in_oupu
 
 if __name__ == "__main__": 
 
+  
+  multisig_withdraw_interactive()
+
+
   # wif_interactive()
   # print get_address_for_privkey("5JHLk1zFzbDY7jJS6RdmZYqHEv5J89NpVC7teru7xrhghqo53mf")
 
   # print get_multisig_interactive(1,2)
-  print multisig_gen_trx("14bdjdoN2orodNcPaq5iVd8aSToKKn7cnN", 0.00020000, "51410421167f7dac2a159bc3957e3498bb6a7c2f16874bf1fbbe5b523b3632d2c0c43f1b491f6f2f449ae45c9b0716329c0c2dbe09f3e5d4e9fb6843af083e222a70a441043704eafafd73f1c32fafe10837a69731b93c0179fa268fc325bdc08f3bb3056b002eac4fa58c520cc3f0041a097232afbe002037edd5ebdab2e493f18ef19e9052ae",
-    "5a507797946da2310ddbc6820e1115ca6d640ab499cb1748db316030c269cb62", 0, "a914f1e3f2ba9971cf5f82daf0f8fe6b4c999f4dfc3587", ["5JHLk1zFzbDY7jJS6RdmZYqHEv5J89NpVC7teru7xrhghqo53mf", "5JH4aEVfQgfjC4tZ394sWyGv8NqLMPd3XmwVtnJ1cKwksYQqan6"])
+  # print multisig_gen_trx("14bdjdoN2orodNcPaq5iVd8aSToKKn7cnN", 0.00020000, "51410421167f7dac2a159bc3957e3498bb6a7c2f16874bf1fbbe5b523b3632d2c0c43f1b491f6f2f449ae45c9b0716329c0c2dbe09f3e5d4e9fb6843af083e222a70a441043704eafafd73f1c32fafe10837a69731b93c0179fa268fc325bdc08f3bb3056b002eac4fa58c520cc3f0041a097232afbe002037edd5ebdab2e493f18ef19e9052ae",
+  #   "5a507797946da2310ddbc6820e1115ca6d640ab499cb1748db316030c269cb62", 0, "a914f1e3f2ba9971cf5f82daf0f8fe6b4c999f4dfc3587", ["5JHLk1zFzbDY7jJS6RdmZYqHEv5J89NpVC7teru7xrhghqo53mf", "5JH4aEVfQgfjC4tZ394sWyGv8NqLMPd3XmwVtnJ1cKwksYQqan6"])
+
+
 
 
