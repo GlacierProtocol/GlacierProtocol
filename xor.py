@@ -339,34 +339,39 @@ def multisig_withdraw_interactive():
   approve = False
 
   while not approve: 
+    print ""
     print "Welcome to the multisig funds withdrawal script!"
-    address = raw_input("destination address:")
+    print "We will need several pieces of information to create a withdrawal transaction. See guide for help."
+    address = raw_input("destination address: ")
+    print ""
 
-    print "For the next steps, you need several pieces of information from an input transaction (see guide)"
-    txid = raw_input("input txid:")
-    vout = raw_input("input vout:")
+    print "For the next steps, you need several pieces of information from an input transaction"
+    txid = raw_input("input txid: ")
+    vout = raw_input("input vout: ")
     script_pub_key = raw_input("input scriptPubKey (hex):")
 
-    print "how many private keys will you be signing with?"
-    key_count = int(raw_input("#:"))
+    print "How many private keys will you be signing with?"
+    key_count = int(raw_input("#: "))
     print key_count
 
     keys = []
     while len(keys) < key_count:
-      key = raw_input("key #{0}".format(len(keys) + 1))
+      key = raw_input("key #{0}: ".format(len(keys) + 1))
       keys.append(key)
 
-    print "please enter the amount (in bitcoin) to withdraw"
-    print "WARNING: all unwithdrawn funds will be sent as miner fees"
-    amount = raw_input("amount (BTC):")
+    print ""
+    print "Please enter the decimal amount (in bitcoin) to withdraw"
+    print "Example: 2.3 for 2.3 bitcoin."
+    print "WARNING: All unwithdrawn funds will be sent as miner fees"
+    amount = raw_input("amount (BTC): ")
 
     print "Please provide the redeem script for this multisig address."
-    redeem_script = raw_input("redeem script:")
+    redeem_script = raw_input("Redeem script: ")
 
     correctyn = False
     while not correctyn:
       print ""
-      print "Is this data correct(y/n)?"
+      print "Is this data correct?"
       print "WARNING: incorrect data may lead to loss of funds"
       print "destination address: {0}".format(address)
       print "amount: {0}".format(amount)
@@ -375,24 +380,33 @@ def multisig_withdraw_interactive():
       print "input scriptPubKey (hex): {0}".format(script_pub_key)
       print "private keys: {0}".format(keys)
       print "redeem script: {0}".format(redeem_script)
-      yn = raw_input("y/n?")
+      print ""
+      yn = raw_input("Is this correct(y/n)?")
       if yn.upper() in ["Y","N"]:
         correctyn = True
       else: 
-        print "\nYou must enter y or n to approve or disprove the transaction\n"
+        print ""
+        print "You must enter y or n to approve or disprove the transaction"
+        print ""
       if yn.upper() == "Y":
         approve = True
       else:
-        print "starting over"
+        print ""
+        print "Process aborted. Starting over...."
 
-  print "\ncalculating transaction.....\n"
+  print "\nCalculating transaction.....\n"
 
-  signed_tx_hex = multisig_gen_trx(address, amount, redeem_script, txid, vout, script_pub_key, keys)
+  signed_tx = multisig_gen_trx(address, amount, redeem_script, txid, vout, script_pub_key, keys)
 
-  print "signed transaction (hex):"
-  print signed_tx_hex
+  signed_tx = json.loads(signed_tx)
 
-  return signed_tx_hex
+  print ""
+  print "Complete signature?"
+  print signed_tx["complete"]
+  print ""
+
+  print "Signed transaction (hex):"
+  print signed_tx["hex"]
 
 
 if __name__ == "__main__":
