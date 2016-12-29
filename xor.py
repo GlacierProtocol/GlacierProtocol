@@ -9,8 +9,10 @@ from hashlib import sha256
 import random
 import subprocess
 import json
+from decimal import *
 
 #### Begin portion copyrighted by David Keijser #####
+# from: https://github.com/keis/base58/tree/59fba59100778465e9567144441026b219c0c5bc
 
 # Copyright (c) 2015 David Keijser
 
@@ -290,9 +292,9 @@ def get_multisig_interactive(m,n):
 
 #### multisig redemption functions ####
 
-def multisig_gen_trx(dest_addr, amount, redeem_script, in_txid, in_vout, in_script_pub_key, privkeys):
+def multisig_gen_trx(addresses, amount, redeem_script, in_txid, in_vout, in_script_pub_key, privkeys):
   """generate a signed multisig transaction
-  dest_addr: base58 bitcoin address
+  addresses: a dictionary of base58 bitcoin destination addresses to decimal bitcoin ammounts
   amount: amount in bitcoins
   redeem_script: hex string,
   in_txid: txid of an input transaction to the multisig address
@@ -304,10 +306,8 @@ def multisig_gen_trx(dest_addr, amount, redeem_script, in_txid, in_vout, in_scri
    "txid": in_txid,
    "vout": int(in_vout)
   }]
-  dest_data_1 = {
-    dest_addr: amount
-  }
-  argstring_1 = "'{0}' '{1}'".format(json.dumps(data_1), json.dumps(dest_data_1))
+  
+  argstring_1 = "'{0}' '{1}'".format(json.dumps(data_1), json.dumps(addresses))
 
   tx_hex = subprocess.check_output("bitcoin-cli createrawtransaction {0}".format(argstring_1), shell=True).strip()
 
@@ -324,23 +324,46 @@ def multisig_gen_trx(dest_addr, amount, redeem_script, in_txid, in_vout, in_scri
   return signed_tx_hex
 
 
+def yes_no_interactive():
+  def confirm_prompt():
+    return raw_input("Confirm? (y/n): ")
+
+  confirm = confirm_prompt()
+
+  while True:
+    if confirm.upper() == "Y":
+      return True
+    if confirm.upper() == "N":
+      return False
+    else:
+      print "You must enter y or n"
+      confirm = confirm_prompt()
+
+
 def multisig_withdraw_interactive():
   """Interactive script for withdrawing coins from a multisig address"""
   #dest_addr, amount, redeem_script, in_txid, in_vout, in_script_pub_key, privkeys
   
   approve = False
 
-  while not approve: 
+  while not approve:
+    addresses = {}
     print ""
     print "Welcome to the multisig funds withdrawal script!"
     print "We will need several pieces of information to create a withdrawal transaction. See guide for help."
-    address = raw_input("destination address: ")
+    dest_address = raw_input("destination address: ")
+    addresses[dest_address] = 0
     print ""
-
+    source_address = raw_input("source address: ")
+    addresses[source_address] = 0
+    print ""
+    
     print "For the next steps, you need several pieces of information from an input transaction"
     txid = raw_input("input txid: ")
     vout = raw_input("input vout: ")
     script_pub_key = raw_input("input scriptPubKey (hex):")
+    input_amount = raw_input("input transaction amount in BTC (ex. 1002.1): ")
+    input_amount = Decimal(input_amount)
 
     print "How many private keys will you be signing with?"
     key_count = int(raw_input("#: "))
@@ -352,43 +375,58 @@ def multisig_withdraw_interactive():
       keys.append(key)
 
     print ""
-    print "Please enter the decimal amount (in bitcoin) to withdraw"
+    print "Please enter the decimal amount (in bitcoin) to send to destination"
     print "Example: 2.3 for 2.3 bitcoin."
-    print "WARNING: All unwithdrawn funds will be sent as miner fees"
-    amount = raw_input("amount (BTC): ")
+    print ""
+    amount = raw_input("Amount to send to {0}".format(dest_address))
+    amount = Decimal(amount)
 
+    print ""
+    print "Please enter the amount (in bitcoin) to send as a miner fee."
+    print "Example: .0001 for .0001 bitcoin"
+    print "All balance not sent to destination or as fee will be returned to source address"
+    fee = raw_input("Fee amount: ")
+    fee = Decimal(fee)
+    print ""
+
+    if fee + amount > input_amount:
+      print "Error: fee + destination amount greater than input amount"
+      raise Exception("Output values greater than input value")
+
+    change_amount = input_amount - amount - fee
+    print "{0} going to change address {1}".format(change_amount, source_address)
+
+    addresses[dest_address] = str(amount)
+    addresses[source_address] = str(change_amount)
+
+    print ""
     print "Please provide the redeem script for this multisig address."
     redeem_script = raw_input("Redeem script: ")
 
-    correctyn = False
-    while not correctyn:
+    print ""
+    print "Is this data correct?"
+    print "WARNING: incorrect data may lead to loss of funds"
+    print "{0} input value".format(input_amount)
+    for address, value in addresses.iteritems():
+      print "{0} btc going to address {1}".format(value, address)
+    print "fee amount: {0}".format(fee)
+    print "input txid: {0}".format(txid)
+    print "input vout: {0}".format(vout)
+    print "input scriptPubKey (hex): {0}".format(script_pub_key)
+    print "private keys: {0}".format(keys)
+    print "redeem script: {0}".format(redeem_script)
+    print ""
+    confirm = yes_no_interactive()
+      
+    if confirm:
+      approve = True
+    else:
       print ""
-      print "Is this data correct?"
-      print "WARNING: incorrect data may lead to loss of funds"
-      print "destination address: {0}".format(address)
-      print "amount: {0}".format(amount)
-      print "input txid: {0}".format(txid)
-      print "input vout: {0}".format(vout)
-      print "input scriptPubKey (hex): {0}".format(script_pub_key)
-      print "private keys: {0}".format(keys)
-      print "redeem script: {0}".format(redeem_script)
-      print ""
-      yn = raw_input("Is this correct(y/n)?")
-      if yn.upper() in ["Y","N"]:
-        correctyn = True
-      else: 
-        print ""
-        print "You must enter y or n to approve or disprove the transaction"
-        print ""
-      if yn.upper() == "Y":
-        approve = True
-      else:
-        print ""
-        print "Process aborted. Starting over...."
+      print "Process aborted. Starting over...."
 
   print "\nCalculating transaction.....\n"
 
-  signed_tx = multisig_gen_trx(address, amount, redeem_script, txid, vout, script_pub_key, keys)
+  signed_tx = multisig_gen_trx(addresses, amount, redeem_script, txid, vout, script_pub_key, keys)
 
   signed_tx = json.loads(signed_tx)
 
