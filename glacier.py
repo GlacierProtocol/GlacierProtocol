@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-# todo: convert string comprehensions to for-loops where they are easier to read. 
-
 import argparse
 import sys
 import hashlib
@@ -11,112 +9,7 @@ import subprocess
 import json
 from decimal import *
 
-#### Begin portion copyrighted by David Keijser #####
-# from: https://github.com/keis/base58/tree/59fba59100778465e9567144441026b219c0c5bc
-
-# Copyright (c) 2015 David Keijser
-
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
-
-
-# 58 character alphabet used
-alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
-
-
-if bytes == str:  # python2
-    iseq = lambda s: map(ord, s)
-    bseq = lambda s: ''.join(map(chr, s))
-    buffer = lambda s: s
-else:  # python3
-    iseq = lambda s: s
-    bseq = bytes
-    buffer = lambda s: s.buffer
-
-
-def b58encode(v):
-  '''Encode a string using Base58'''
-
-  if not isinstance(v, bytes):
-      raise TypeError("a bytes-like object is required, not '%s'" %
-                      type(v).__name__)
-
-  origlen = len(v)
-  v = v.lstrip(b'\0')
-  newlen = len(v)
-
-  p, acc = 1, 0
-  for c in iseq(v[::-1]):
-      acc += p * c
-      p = p << 8
-
-  result = ''
-  while acc > 0:
-      acc, mod = divmod(acc, 58)
-      result += alphabet[mod]
-
-  return (result + alphabet[0] * (origlen - newlen))[::-1]
-
-
-def b58decode(v):
-  '''Decode a Base58 encoded string'''
-
-  if not isinstance(v, str):
-      v = v.decode('ascii')
-
-  origlen = len(v)
-  v = v.lstrip(alphabet[0])
-  newlen = len(v)
-
-  p, acc = 1, 0
-  for c in v[::-1]:
-      acc += p * alphabet.index(c)
-      p *= 58
-
-  result = []
-  while acc > 0:
-      acc, mod = divmod(acc, 256)
-      result.append(mod)
-
-  return (bseq(result) + b'\0' * (origlen - newlen))[::-1]
-
-
-def b58encode_check(v):
-  '''Encode a string using Base58 with a 4 character checksum'''
-
-  digest = sha256(sha256(v).digest()).digest()
-  return b58encode(v + digest[:4])
-
-
-def b58decode_check(v):
-  '''Decode and verify the checksum of a Base58 encoded string'''
-
-  result = b58decode(v)
-  result, check = result[:-4], result[-4:]
-  digest = sha256(sha256(result).digest()).digest()
-
-  if check != digest[:4]:
-      raise ValueError("Invalid checksum")
-
-  return result
-
-
-#### end portion copyrighted by David Keijser #####
+from base58 import b58encode, b58decode, b58encode_check, b58decode_check
 
 #### Dice handling functions ####
 
