@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import time
 import argparse
 import sys
 import hashlib
@@ -10,6 +11,24 @@ import json
 from decimal import Decimal
 
 from base58 import b58encode, b58decode, b58encode_check, b58decode_check
+
+
+#### Manage bitcoin core ####
+
+def ensure_bitcoind():
+  devnull = open("/dev/null")
+  
+  subprocess.call("bitcoind -daemon -connect=0.0.0.0", shell=True, stdout=devnull, stderr=devnull)
+  times = 0
+
+  while times < 10:
+    times += 1
+    if subprocess.call("bitcoin-cli getinfo", shell=True, stdout=devnull, stderr=devnull) == 0:
+      return
+    time.sleep(0.5)
+
+  raise Exception("Timeout while starting bitcoin server")
+
 
 #### Dice handling functions ####
 
@@ -124,6 +143,8 @@ def get_address_for_privkey(privkey):
 
   # Arbitrary label. A unique label ensures that we will get back only one public key 
   # when we call the "getaddressesbyaccount" rpc later
+
+  ensure_bitcoind()
   label = random.randint(0, 2**128)
   subprocess.call("bitcoin-cli importprivkey {0} {1}".format(privkey, label), shell=True)
   addresses = subprocess.check_output("bitcoin-cli getaddressesbyaccount {0}".format(label), shell=True)
@@ -132,6 +153,8 @@ def get_address_for_privkey(privkey):
 
 
 def deposit_interactive(m, n, dice_length = 62, seed_length = 20):
+  ensure_bitcoind()
+
   print "Creating {0}-of-{1} multisig address....\n".format(m, n)
   
   keys = []
@@ -178,6 +201,27 @@ def deposit_interactive(m, n, dice_length = 62, seed_length = 20):
   print "\nRedeem Script:"
   print "{}".format(results["redeemScript"])
   print ""
+
+  subprocess.call("qrencode -o address.png {}".format(results["address"]), shell=True)
+  subprocess.call("qrencode -o redemption.png {}".format(results["redeemScript"]), shell=True)
+  
+  # checking our qr codes to make sure that malware hasn't interfered with our ability to right QR codes
+  address_check = subprocess.check_output("zbarimg --quiet --raw address.png", shell=True)
+  redemption_check = subprocess.check_output("zbarimg --quiet --raw redemption.png", shell=True)
+
+  if address_check.strip() != results["address"]:
+    print "********************************************************************"
+    print "WARNING: address QR did not get encoded properly. This could be a sign of a security breach"
+    print "********************************************************************"
+
+  if redemption_check.strip() != results["redeemScript"]:
+    print "********************************************************************"
+    print "WARNING: redemption QR did not get encoded properly. This could be a sign of a security breach"
+    print "********************************************************************"
+
+  print "QR codes produced"
+  print "Multisig address in address.png"
+  print "Redeem script in redemption.png"
   
 
 
@@ -192,6 +236,7 @@ def multisig_gen_trx(addresses, redeem_script, in_txid, in_vout, in_script_pub_k
   in_output_script: the scriptPubKey of the output
   privkeys: an array of private keys to sign with"""
 
+  ensure_bitcoind()
   data_1 = [{
    "txid": in_txid,
    "vout": int(in_vout)
@@ -230,8 +275,8 @@ def yes_no_interactive():
       confirm = confirm_prompt()
 
 
-
 def withdraw_interactive():
+  ensure_bitcoind()
 
   approve = False
 
