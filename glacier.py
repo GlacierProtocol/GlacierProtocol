@@ -7,7 +7,7 @@ from hashlib import sha256
 import random
 import subprocess
 import json
-from decimal import *
+from decimal import Decimal
 
 from base58 import b58encode, b58decode, b58encode_check, b58decode_check
 
@@ -183,10 +183,9 @@ def deposit_interactive(m, n, dice_length = 62, seed_length = 20):
 
 #### multisig redemption functions ####
 
-def multisig_gen_trx(addresses, amount, redeem_script, in_txid, in_vout, in_script_pub_key, privkeys):
+def multisig_gen_trx(addresses, redeem_script, in_txid, in_vout, in_script_pub_key, privkeys):
   """generate a signed multisig transaction
   addresses: a dictionary of base58 bitcoin destination addresses to decimal bitcoin ammounts
-  amount: amount in bitcoins
   redeem_script: hex string,
   in_txid: txid of an input transaction to the multisig address
   in_vout: which output you are sending
@@ -231,110 +230,127 @@ def yes_no_interactive():
       confirm = confirm_prompt()
 
 
-def multisig_withdraw_interactive():
-  """Interactive script for withdrawing coins from a multisig address"""
-  #dest_addr, amount, redeem_script, in_txid, in_vout, in_script_pub_key, privkeys
-  
+
+def withdraw_interactive():
+
   approve = False
 
   while not approve:
     addresses = {}
+
     print ""
     print "Welcome to the multisig funds withdrawal script!"
-    print "We will need several pieces of information to create a withdrawal transaction. See guide for help."
-    dest_address = raw_input("destination address: ")
+    print "We will need several pieces of information to create a withdrawal transaction."
+    print "\n*** PLEASE BE SURE TO ENTER THE CORRECT DESTINATION ADDRESS ***\n"
+    dest_address = raw_input("\nDestination address: ")
     addresses[dest_address] = 0
-    print ""
-    source_address = raw_input("source address: ")
-    addresses[source_address] = 0
-    print ""
     
-    print "For the next steps, you need several pieces of information from an input transaction"
-    txid = raw_input("input txid: ")
-    vout = raw_input("input vout: ")
-    script_pub_key = raw_input("input scriptPubKey (hex):")
-    input_amount = raw_input("input transaction amount in BTC (ex. 1002.1): ")
-    input_amount = Decimal(input_amount)
+    source_address = raw_input("\nSource multisig address: ")
+    addresses[source_address] = 0
+    
+    print "\nPlease provide the redeem script for this multisig address."
+    redeem_script = raw_input("Redeem script: ")
+
+    print "\nPlease provide a raw transaction (hex format) with unspent outputs for this source address:"
+    hex_tx = raw_input()
+
+    tx_json = subprocess.check_output("bitcoin-cli decoderawtransaction {0}".format(hex_tx), shell=True)
+    tx = json.loads(tx_json)
+
+    utxo = None
+    for output in tx["vout"]:
+      out_addresses = output["scriptPubKey"]["addresses"]
+      amount_btc = output["value"]
+      if source_address in out_addresses:
+        utxo = output
+
+    if not utxo:
+      print "\nTransaction data not found for source address: {}".format(source_address)
+      sys.exit()
+    else: 
+      print "\nTransaction data found for source address. \nAmount: {} btc".format(utxo["value"])
+
+    input_amount = Decimal(utxo["value"])
+
+    print "\nPlease enter the decimal amount (in bitcoin) to send to destination"
+    print "\nExample: 2.3 for 2.3 bitcoin.\n"
+    amount = raw_input("Amount to send to {0}: ".format(dest_address))
+    amount = Decimal(amount)
+
+    print "\nPlease enter the amount (in bitcoin) to send as a miner fee."
+    print "Example: .0001 for .0001 bitcoin"
+    print "All balance not sent to destination or as fee will be returned to source address as change\n"
+    fee = raw_input("Fee amount: ")
+    fee = Decimal(fee)
+    
+    if fee + amount > input_amount:
+      print "Error: fee + destination amount greater than input amount"
+      raise Exception("Output values greater than input value")
+
+    change_amount = input_amount - amount - fee
+
+    # less than a satoshi due to weird floating point imprecision
+    if change_amount < 1e-8:
+      change_amount = 0
+    
+    if change_amount > 0:
+      print "{0} going to change address {1}".format(change_amount, source_address)
 
     print "How many private keys will you be signing with?"
     key_count = int(raw_input("#: "))
-    print key_count
 
     keys = []
     while len(keys) < key_count:
       key = raw_input("key #{0}: ".format(len(keys) + 1))
       keys.append(key)
 
-    print ""
-    print "Please enter the decimal amount (in bitcoin) to send to destination"
-    print "Example: 2.3 for 2.3 bitcoin."
-    print ""
-    amount = raw_input("Amount to send to {0}".format(dest_address))
-    amount = Decimal(amount)
-
-    print ""
-    print "Please enter the amount (in bitcoin) to send as a miner fee."
-    print "Example: .0001 for .0001 bitcoin"
-    print "All balance not sent to destination or as fee will be returned to source address"
-    fee = raw_input("Fee amount: ")
-    fee = Decimal(fee)
-    print ""
-
-    if fee + amount > input_amount:
-      print "Error: fee + destination amount greater than input amount"
-      raise Exception("Output values greater than input value")
-
-    change_amount = input_amount - amount - fee
-    print "{0} going to change address {1}".format(change_amount, source_address)
-
     addresses[dest_address] = str(amount)
     addresses[source_address] = str(change_amount)
 
-    print ""
-    print "Please provide the redeem script for this multisig address."
-    redeem_script = raw_input("Redeem script: ")
 
-    print ""
-    print "Is this data correct?"
-    print "WARNING: incorrect data may lead to loss of funds"
+    print "\nIs this data correct?"
+    print "*** WARNING: incorrect data may lead to loss of funds ***"
     print "{0} input value".format(input_amount)
     for address, value in addresses.iteritems():
       print "{0} btc going to address {1}".format(value, address)
-    print "fee amount: {0}".format(fee)
-    print "input txid: {0}".format(txid)
-    print "input vout: {0}".format(vout)
-    print "input scriptPubKey (hex): {0}".format(script_pub_key)
-    print "private keys: {0}".format(keys)
-    print "redeem script: {0}".format(redeem_script)
-    print ""
+    print "Fee amount: {0}".format(fee)
+    print "Signing with private keys:"
+    for key in keys:
+      print "{}".format(key)
+
     confirm = yes_no_interactive()
       
     if confirm:
       approve = True
     else:
-      print ""
-      print "Process aborted. Starting over...."
+      print "\nProcess aborted. Starting over...."
 
+  #### Calculate Transaction ####
   print "\nCalculating transaction.....\n"
 
-  signed_tx = multisig_gen_trx(addresses, amount, redeem_script, txid, vout, script_pub_key, keys)
+  for address, value in addresses.items():
+    if value == "0":
+      del addresses[address]
 
+  txid = tx["txid"]
+  vout = utxo["n"]
+  script_pub_key = utxo["scriptPubKey"]["hex"]
+
+  signed_tx = multisig_gen_trx(addresses, redeem_script, txid, vout, script_pub_key, keys)
   signed_tx = json.loads(signed_tx)
 
-  print ""
-  print "Complete signature?"
+  print "\nComplete signature?"
   print signed_tx["complete"]
-  print ""
 
-  print "Signed transaction (hex):"
+  print "\nSigned transaction (hex):"
   print signed_tx["hex"]
 
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
-  parser.add_argument('program', choices=['keygen', 'deposit', 'withdraw'])
+  parser.add_argument('program', choices=['deposit', 'withdraw'])
 
-  parser.add_argument("-d", "--dice", type=int, help="The minimum number of dice rolls to use for entropy when generating private keys (default: 64)", default=62)
+  parser.add_argument("-d", "--dice", type=int, help="The minimum number of dice rolls to use for entropy when generating private keys (default: 62)", default=62)
   parser.add_argument("-s", "--seed", type=int, help="Minimum number of 8-bit bytes to use for seed entropy when generating private keys (default: 20)", default=20)
   parser.add_argument("-m", type=int, help="Number of signing keys required in an m-of-n multisig address creation (default m-of-n = 1-of-2)", default=1)
   parser.add_argument("-n", type=int, help="Number of total keys required in an m-of-n multisig address creation (default m-of-n = 1-of-2)", default=2)
@@ -344,5 +360,5 @@ if __name__ == "__main__":
     deposit_interactive(args.m, args.n, args.dice, args.seed)
 
   if args.program == "withdraw":
-    multisig_withdraw_interactive()
+    withdraw_interactive()
 
