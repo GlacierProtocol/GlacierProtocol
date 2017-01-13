@@ -275,6 +275,100 @@ def yes_no_interactive():
       confirm = confirm_prompt()
 
 
+def create_signed_transaction(keys, destinations, redeem_script, tx, utxo):
+  ensure_bitcoind()
+  
+  for address, value in destinations.items():
+    if value == "0":
+      del destinations[address]
+
+  txid = tx["txid"]
+  vout = utxo["n"]
+  script_pub_key = utxo["scriptPubKey"]["hex"]
+
+  data_1 = [{
+   "txid": txid,
+   "vout": int(vout)
+  }]
+  
+  argstring_1 = "'{0}' '{1}'".format(json.dumps(data_1), json.dumps(destinations))
+
+  tx_hex = subprocess.check_output("bitcoin-cli createrawtransaction {0}".format(argstring_1), shell=True).strip()
+
+  data_2 = [{
+    "txid": txid,
+    "vout": int(vout),
+    "scriptPubKey": script_pub_key,
+    "redeemScript": redeem_script
+  }]
+
+  argstring_2 = "{0} '{1}' '{2}'".format(tx_hex, json.dumps(data_2), json.dumps(keys))
+  signed_tx_hex = subprocess.check_output("bitcoin-cli signrawtransaction {0}".format(argstring_2), shell=True).strip()
+  signed_tx = json.loads(signed_tx_hex)
+  return signed_tx
+
+def satoshi_to_btc(satoshi):
+  return Decimal(satoshi) / Decimal(100000000)
+
+def btc_to_satoshi(btc):
+  return btc * 100000000
+
+
+def get_fee_interactive(keys, addresses, redeem_script, tx, utxo, satoshis_per_byte = None):
+  """ Returns a recommended transaction fee, given market fee data provided by the user interactively
+  Parameters:
+    keys: A list of signing keys
+    addresses: A dictionary of format {"address": "amount"}
+    redeem_script: String
+    tx: A dictionary representing a transaction (bitcoin core format)
+    utxo: A dictionary representing a transaction output (bitcoin core format
+  """
+
+  ensure_bitcoind()
+  MAX_FEE = .005 #in btc
+
+  approve = False
+
+  while not approve:
+
+    if not satoshis_per_byte: 
+      print "What is the current recommended fee amount?"
+      satoshis_per_byte = int(raw_input("Satoshis per byte:"))
+
+    signed_tx = create_signed_transaction(keys, addresses, redeem_script, tx, utxo)
+    size = len(signed_tx["hex"]) / 2
+
+
+    fee = size * satoshis_per_byte
+
+    fee = satoshi_to_btc(fee)
+
+    if fee > MAX_FEE:
+      print "Fee is too high. Must be under {}".format(MAX_FEE)
+    else: 
+      print "\nBased on your input, the fee is {:.8f} bitcoin".format(fee)
+      confirm = yes_no_interactive()
+      
+      if confirm:
+        approve = True
+      else:
+        print "\nFee calculation aborted. Starting over...."
+
+  return fee
+
+
+def get_utxo(tx, address):
+  utxo = None
+  
+  for output in tx["vout"]:
+    out_addresses = output["scriptPubKey"]["addresses"]
+    amount_btc = output["value"]
+    if address in out_addresses:
+      utxo = output
+
+  return utxo 
+
+
 def withdraw_interactive():
   ensure_bitcoind()
 
@@ -283,10 +377,10 @@ def withdraw_interactive():
   while not approve:
     addresses = {}
 
-    print ""
-    print "Welcome to the multisig funds withdrawal script!"
-    print "We will need several pieces of information to create a withdrawal transaction."
-    print "\n*** PLEASE BE SURE TO ENTER THE CORRECT DESTINATION ADDRESS ***\n"
+    print """
+    Welcome to the multisig funds withdrawal script!
+    We will need several pieces of information to create a withdrawal transaction.
+    \n*** PLEASE BE SURE TO ENTER THE CORRECT DESTINATION ADDRESS ***\n"""
     dest_address = raw_input("\nDestination address: ")
     addresses[dest_address] = 0
     
@@ -299,15 +393,8 @@ def withdraw_interactive():
     print "\nPlease provide a raw transaction (hex format) with unspent outputs for this source address:"
     hex_tx = raw_input()
 
-    tx_json = subprocess.check_output("bitcoin-cli decoderawtransaction {0}".format(hex_tx), shell=True)
-    tx = json.loads(tx_json)
-
-    utxo = None
-    for output in tx["vout"]:
-      out_addresses = output["scriptPubKey"]["addresses"]
-      amount_btc = output["value"]
-      if source_address in out_addresses:
-        utxo = output
+    tx = json.loads(subprocess.check_output("bitcoin-cli decoderawtransaction {0}".format(hex_tx), shell=True))
+    utxo = get_utxo(tx, source_address)
 
     if not utxo:
       print "\nTransaction data not found for source address: {}".format(source_address)
@@ -315,8 +402,24 @@ def withdraw_interactive():
     else: 
       print "\nTransaction data found for source address. \nAmount: {} btc".format(utxo["value"])
 
-    input_amount = Decimal(utxo["value"])
+    print "How many private keys will you be signing with?"
+    key_count = int(raw_input("#: "))
 
+    keys = []
+    while len(keys) < key_count:
+      key = raw_input("key #{0}: ".format(len(keys) + 1))
+      keys.append(key)
+
+
+    ###### fees, amount, and change #######
+
+    input_amount = Decimal(utxo["value"])
+    fee = get_fee_interactive(keys, addresses, redeem_script, tx, utxo)
+    if fee > input_amount:
+      print "ERROR: Input amount is less than recommended fee. Try using a larger input transaction. Exiting...."
+      sys.exit()
+
+    print "After fees of {0} you have {1} bitcoin to send".format(fee, input_amount - fee)
     print "\nPlease enter the decimal amount (in bitcoin) to send to destination"
     print "\nExample: 2.3 for 2.3 bitcoin.\n"
     amount = raw_input("Amount to send to {0}: ".format(dest_address))
@@ -341,20 +444,13 @@ def withdraw_interactive():
     if change_amount > 0:
       print "{0} going to change address {1}".format(change_amount, source_address)
 
-    print "How many private keys will you be signing with?"
-    key_count = int(raw_input("#: "))
-
-    keys = []
-    while len(keys) < key_count:
-      key = raw_input("key #{0}: ".format(len(keys) + 1))
-      keys.append(key)
-
     addresses[dest_address] = str(amount)
     addresses[source_address] = str(change_amount)
 
-
+    # check data
     print "\nIs this data correct?"
     print "*** WARNING: incorrect data may lead to loss of funds ***"
+
     print "{0} input value".format(input_amount)
     for address, value in addresses.iteritems():
       print "{0} btc going to address {1}".format(value, address)
@@ -373,16 +469,7 @@ def withdraw_interactive():
   #### Calculate Transaction ####
   print "\nCalculating transaction.....\n"
 
-  for address, value in addresses.items():
-    if value == "0":
-      del addresses[address]
-
-  txid = tx["txid"]
-  vout = utxo["n"]
-  script_pub_key = utxo["scriptPubKey"]["hex"]
-
-  signed_tx = multisig_gen_trx(addresses, redeem_script, txid, vout, script_pub_key, keys)
-  signed_tx = json.loads(signed_tx)
+  signed_tx = create_signed_transaction(keys, addresses, redeem_script, tx, utxo)
 
   print "\nComplete signature?"
   print signed_tx["complete"]
