@@ -423,12 +423,16 @@ def withdraw_interactive():
       print "ERROR: Input amount is less than recommended fee. Try using a larger input transaction. Exiting...."
       sys.exit()
 
-    print "\n\nAfter fees of {0} you have {1} bitcoin to send".format(fee, input_amount - fee)
+    
     print "\nPlease enter the decimal amount (in bitcoin) to send to destination"
     print "\nExample: 2.3 for 2.3 bitcoin.\n"
     print "*** All balance not sent to destination or as fee will be returned to source address as change ***\n"
-    amount = raw_input("Amount to send to {0}: ".format(dest_address))
-    amount = Decimal(amount).quantize(satoshi_places)
+    print "\nAfter fees of {0} you have {1} bitcoin to send".format(fee, input_amount - fee)
+    amount = raw_input("Amount to send to {0} (leave blank for all): ".format(dest_address))
+    if amount == "":
+      amount = input_amount - fee
+    else: 
+      amount = Decimal(amount).quantize(satoshi_places)
     
     if fee + amount > input_amount:
       print "Error: fee + destination amount greater than input amount"
