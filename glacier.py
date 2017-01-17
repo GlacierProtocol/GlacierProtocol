@@ -194,7 +194,7 @@ def deposit_interactive(m, n, dice_length = 62, seed_length = 20):
 
   print "Private keys:"
   for idx, key in enumerate(keys):
-    print "key #{0}: {1}".format(idx, key)
+    print "key #{0}: {1}".format(idx+1, key)
 
   print "\nMulitsig Address:"
   print "{}".format(results["address"])
@@ -495,15 +495,31 @@ def withdraw_interactive():
   print "\nSigned transaction QR code stored at tx.png"
 
 
+def make_seeds(n, length):
+
+  print "Making {} seeds....".format(n)
+  print "Please move your mouse to generate randomness if seeds don't appear right away\n"
+
+  seeds = 0
+  while seeds < n:
+    seed = subprocess.check_output("xxd -l {} -p /dev/random".format(length), shell=True)
+    seeds += 1
+    print "Seed #{0}: {1}".format(seeds, seed.replace('\n',''))
+
+
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
-  parser.add_argument('program', choices=['deposit', 'withdraw'])
+  parser.add_argument('program', choices=['make_seeds', 'deposit', 'withdraw'])
 
+  parser.add_argument("--num_seeds", type=int, help="The number of random seeds to make", default=1)
   parser.add_argument("-d", "--dice", type=int, help="The minimum number of dice rolls to use for entropy when generating private keys (default: 62)", default=62)
   parser.add_argument("-s", "--seed", type=int, help="Minimum number of 8-bit bytes to use for seed entropy when generating private keys (default: 20)", default=20)
   parser.add_argument("-m", type=int, help="Number of signing keys required in an m-of-n multisig address creation (default m-of-n = 1-of-2)", default=1)
   parser.add_argument("-n", type=int, help="Number of total keys required in an m-of-n multisig address creation (default m-of-n = 1-of-2)", default=2)
   args = parser.parse_args()
+
+  if args.program == "make_seeds":
+    make_seeds(args.num_seeds, args.seed)
 
   if args.program == "deposit":
     deposit_interactive(args.m, args.n, args.dice, args.seed)
