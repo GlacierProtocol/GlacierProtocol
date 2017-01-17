@@ -12,6 +12,7 @@ from decimal import Decimal
 
 from base58 import b58encode, b58decode, b58encode_check, b58decode_check
 
+satoshi_places = Decimal("0.00000001")
 
 #### Manage bitcoin core ####
 
@@ -205,7 +206,7 @@ def deposit_interactive(m, n, dice_length = 62, seed_length = 20):
   subprocess.call("qrencode -o address.png {}".format(results["address"]), shell=True)
   subprocess.call("qrencode -o redemption.png {}".format(results["redeemScript"]), shell=True)
   
-  # checking our qr codes to make sure that malware hasn't interfered with our ability to right QR codes
+  # checking our qr codes to make sure that malware hasn't interfered with our ability to write QR codes
   address_check = subprocess.check_output("zbarimg --quiet --raw address.png", shell=True)
   redemption_check = subprocess.check_output("zbarimg --quiet --raw redemption.png", shell=True)
 
@@ -308,10 +309,12 @@ def create_signed_transaction(keys, destinations, redeem_script, tx, utxo):
   return signed_tx
 
 def satoshi_to_btc(satoshi):
-  return Decimal(satoshi) / Decimal(100000000)
+  value = Decimal(satoshi) / Decimal(100000000)
+  return value.quantize(satoshi_places)
 
 def btc_to_satoshi(btc):
-  return btc * 100000000
+  value = btc * 100000000
+  return int(value)
 
 
 def get_fee_interactive(keys, addresses, redeem_script, tx, utxo, satoshis_per_byte = None):
@@ -346,7 +349,7 @@ def get_fee_interactive(keys, addresses, redeem_script, tx, utxo, satoshis_per_b
     if fee > MAX_FEE:
       print "Fee is too high. Must be under {}".format(MAX_FEE)
     else: 
-      print "\nBased on your input, the fee is {:.8f} bitcoin".format(fee)
+      print "\nBased on your input, the fee is {} bitcoin".format(fee)
       confirm = yes_no_interactive()
       
       if confirm:
@@ -413,23 +416,19 @@ def withdraw_interactive():
 
     ###### fees, amount, and change #######
 
-    input_amount = Decimal(utxo["value"])
+
+    input_amount = Decimal(utxo["value"]).quantize(satoshi_places)
     fee = get_fee_interactive(keys, addresses, redeem_script, tx, utxo)
     if fee > input_amount:
       print "ERROR: Input amount is less than recommended fee. Try using a larger input transaction. Exiting...."
       sys.exit()
 
-    print "After fees of {0} you have {1} bitcoin to send".format(fee, input_amount - fee)
+    print "\n\nAfter fees of {0} you have {1} bitcoin to send".format(fee, input_amount - fee)
     print "\nPlease enter the decimal amount (in bitcoin) to send to destination"
     print "\nExample: 2.3 for 2.3 bitcoin.\n"
+    print "*** All balance not sent to destination or as fee will be returned to source address as change ***\n"
     amount = raw_input("Amount to send to {0}: ".format(dest_address))
-    amount = Decimal(amount)
-
-    print "\nPlease enter the amount (in bitcoin) to send as a miner fee."
-    print "Example: .0001 for .0001 bitcoin"
-    print "All balance not sent to destination or as fee will be returned to source address as change\n"
-    fee = raw_input("Fee amount: ")
-    fee = Decimal(fee)
+    amount = Decimal(amount).quantize(satoshi_places)
     
     if fee + amount > input_amount:
       print "Error: fee + destination amount greater than input amount"
@@ -453,7 +452,10 @@ def withdraw_interactive():
 
     print "{0} input value".format(input_amount)
     for address, value in addresses.iteritems():
-      print "{0} btc going to address {1}".format(value, address)
+      if address == source_address:
+        print "{0} btc going to change address {1}".format(value, address)
+      else:
+        print "{0} btc going to destination address {1}".format(value, address)
     print "Fee amount: {0}".format(fee)
     print "Signing with private keys:"
     for key in keys:
@@ -476,6 +478,17 @@ def withdraw_interactive():
 
   print "\nSigned transaction (hex):"
   print signed_tx["hex"]
+
+
+  subprocess.call("qrencode -o tx.png {}".format(signed_tx["hex"]), shell=True)
+  tx_check = subprocess.check_output("zbarimg --quiet --raw tx.png", shell=True)
+
+  if tx_check.strip() != signed_tx["hex"]:
+    print "********************************************************************"
+    print "WARNING: transaction QR did not get encoded properly. This could be a sign of a security breach"
+    print "********************************************************************"
+
+  print "\nSigned transaction QR code stored at tx.png"
 
 
 if __name__ == "__main__":
