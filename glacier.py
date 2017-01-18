@@ -15,7 +15,7 @@
 #
 # GlacierScript avoids cryptographic and other security-sensitive operations as much as possible.
 #
-# GlacierScript leverages the following command-line applications:
+# GlacierScript depends on the following command-line applications:
 # - Bitcoin Core (http://bitcoincore.org)
 # - qrencode (QR code writer: http://packages.ubuntu.com/xenial/qrencode)
 # - zbarimg (QR code reader: http://packages.ubuntu.com/xenial/zbar-tools)
@@ -27,7 +27,7 @@ import time
 import argparse
 import sys
 import hashlib
-from hashlib import sha256
+from hashlib import sha256, md5
 import random
 import subprocess
 import json
@@ -204,20 +204,25 @@ def key_to_WIF(key):
     return key_58
 
 
-def hashSha256(s):
+def hash_sha256(s):
     """A thin wrapper around the hashlib sha 256 library to provide a more functional interface"""
     m = sha256()
     m.update(s)
     return m.hexdigest()
 
 
+def hash_md5(s):
+    """A thin wrapper around the hashlib md5 library to provide a more functional interface"""
+    m = md5()
+    m.update(s)
+    return m.hexdigest()
+
+
 def checksum(s):
-    h1 = hashSha256(s.decode("hex"))
-    h2 = hashSha256(h1.decode("hex"))
+    h1 = hash_sha256(s.decode("hex"))
+    h2 = hash_sha256(h1.decode("hex"))
     return h2[0:8]
 
-
-#### multisig creation functions #####
 
 def get_address_for_privkey(privkey):
     """A method for retrieving the address associated with a private key from bitcoin core
@@ -248,10 +253,10 @@ def deposit_interactive(m, n, dice_length=62, seed_length=20):
         print "Generating address #{}".format(index)
 
         dice_string = read_dice_interactive(dice_length)
-        dice_hash = hashSha256(dice_string)
+        dice_hash = hash_sha256(dice_string)
 
         seed_string = read_seed_interactive(seed_length)
-        seed_hash = hashSha256(seed_string)
+        seed_hash = hash_sha256(seed_string)
 
         # back to hex string
         combined_seed = xor_hex_strings(dice_hash, seed_hash)
@@ -625,8 +630,8 @@ def withdraw_interactive():
     print "\nSigned transaction (hex):"
     print signed_tx["hex"]
 
-    print "\nTransaction checksum (sha256):"
-    print hashSha256(signed_tx["hex"])
+    print "\nTransaction checksum (md5):"
+    print hash_md5(signed_tx["hex"])
 
     write_and_check_qr("Transaction", "tx.png", signed_tx["hex"])
 
