@@ -14,16 +14,16 @@ from base58 import b58encode, b58decode, b58encode_check, b58decode_check
 
 satoshi_places = Decimal("0.00000001")
 
-#### Manage bitcoin core ####
 
+#### Manage bitcoin core ####
 
 def ensure_bitcoind():
     devnull = open("/dev/null")
 
     subprocess.call("bitcoind -daemon -connect=0.0.0.0",
                     shell=True, stdout=devnull, stderr=devnull)
-    times = 0
 
+    times = 0
     while times < 10:
         times += 1
         if subprocess.call("bitcoin-cli getinfo", shell=True, stdout=devnull, stderr=devnull) == 0:
@@ -31,6 +31,22 @@ def ensure_bitcoind():
         time.sleep(0.5)
 
     raise Exception("Timeout while starting bitcoin server")
+
+
+def write_and_check_qr(name, filename, data):
+    subprocess.call("qrencode -o {0} {1}".format(filename, data), shell=True)
+
+    # checking our qr codes to make sure that malware hasn't interfered with
+    # our ability to write QR codes
+    check = subprocess.check_output(
+        "zbarimg --quiet --raw {}".format(filename), shell=True)
+
+    if check.strip() != data:
+        print "********************************************************************"
+        print "WARNING: {} QR did not get encoded properly. This could be a sign of a security breach".format(name)
+        print "********************************************************************"
+
+    print "QR code for {0} in {1}".format(name, filename)
 
 
 #### Dice handling functions ####
@@ -209,31 +225,9 @@ def deposit_interactive(m, n, dice_length=62, seed_length=20):
     print "{}".format(results["redeemScript"])
     print ""
 
-    subprocess.call(
-        "qrencode -o address.png {}".format(results["address"]), shell=True)
-    subprocess.call(
-        "qrencode -o redemption.png {}".format(results["redeemScript"]), shell=True)
-
-    # checking our qr codes to make sure that malware hasn't interfered with
-    # our ability to write QR codes
-    address_check = subprocess.check_output(
-        "zbarimg --quiet --raw address.png", shell=True)
-    redemption_check = subprocess.check_output(
-        "zbarimg --quiet --raw redemption.png", shell=True)
-
-    if address_check.strip() != results["address"]:
-        print "********************************************************************"
-        print "WARNING: address QR did not get encoded properly. This could be a sign of a security breach"
-        print "********************************************************************"
-
-    if redemption_check.strip() != results["redeemScript"]:
-        print "********************************************************************"
-        print "WARNING: redemption QR did not get encoded properly. This could be a sign of a security breach"
-        print "********************************************************************"
-
-    print "QR codes produced"
-    print "Multisig address in address.png"
-    print "Redeem script in redemption.png"
+    write_and_check_qr("Multisig address", "address.png", results["address"])
+    write_and_check_qr("Redeem Script", "redemption.png",
+                       results["redeemScript"])
 
 
 #### multisig redemption functions ####
@@ -290,40 +284,52 @@ def yes_no_interactive():
             confirm = confirm_prompt()
 
 
-def create_signed_transaction(keys, destinations, redeem_script, tx, utxo):
+def create_unsigned_transaction(source_address, keys, destinations, redeem_script, txs):
     ensure_bitcoind()
 
     for address, value in destinations.items():
         if value == "0":
             del destinations[address]
 
-    txid = tx["txid"]
-    vout = utxo["n"]
-    script_pub_key = utxo["scriptPubKey"]["hex"]
+    inputs = []
+    for tx in txs:
+        utxos = get_utxos(tx, source_address)
+        txid = tx["txid"]
 
-    data_1 = [{
-        "txid": txid,
-        "vout": int(vout)
-    }]
+        for utxo in utxos:
+            inputs.append({
+                "txid": txid,
+                "vout": int(utxo["n"])
+            })
 
-    argstring_1 = "'{0}' '{1}'".format(
-        json.dumps(data_1), json.dumps(destinations))
+    argstring = "'{0}' '{1}'".format(
+        json.dumps(inputs), json.dumps(destinations))
 
-    tx_hex = subprocess.check_output(
-        "bitcoin-cli createrawtransaction {0}".format(argstring_1), shell=True).strip()
+    tx_unsigned_hex = subprocess.check_output(
+        "bitcoin-cli createrawtransaction {0}".format(argstring), shell=True).strip()
 
-    data_2 = [{
-        "txid": txid,
-        "vout": int(vout),
-        "scriptPubKey": script_pub_key,
-        "redeemScript": redeem_script
-    }]
+    return tx_unsigned_hex
+
+
+def sign_transaction(source_address, keys, redeem_script, unsigned_hex, txs):
+
+    inputs = []
+    for tx in txs:
+        utxos = get_utxos(tx, source_address)
+        txid = tx["txid"]
+        for utxo in utxos:
+            inputs.append({
+                "txid": txid,
+                "vout": int(utxo["n"]),
+                "scriptPubKey": utxo["scriptPubKey"]["hex"],
+                "redeemScript": redeem_script
+            })
 
     argstring_2 = "{0} '{1}' '{2}'".format(
-        tx_hex, json.dumps(data_2), json.dumps(keys))
-    signed_tx_hex = subprocess.check_output(
+        unsigned_hex, json.dumps(inputs), json.dumps(keys))
+    signed_hex = subprocess.check_output(
         "bitcoin-cli signrawtransaction {0}".format(argstring_2), shell=True).strip()
-    signed_tx = json.loads(signed_tx_hex)
+    signed_tx = json.loads(signed_hex)
     return signed_tx
 
 
@@ -337,14 +343,15 @@ def btc_to_satoshi(btc):
     return int(value)
 
 
-def get_fee_interactive(keys, addresses, redeem_script, tx, utxo, satoshis_per_byte=None):
+def get_fee_interactive(source_address, keys, destinations, redeem_script, txs, satoshis_per_byte=None):
     """ Returns a recommended transaction fee, given market fee data provided by the user interactively
     Parameters:
       keys: A list of signing keys
       addresses: A dictionary of format {"address": "amount"}
       redeem_script: String
       tx: A dictionary representing a transaction (bitcoin core format)
-      utxo: A dictionary representing a transaction output (bitcoin core format
+      utxo: A dictionary representing a transaction output (bitcoin core format)
+      satoshis_per_byte: an INT 
     """
 
     ensure_bitcoind()
@@ -358,12 +365,15 @@ def get_fee_interactive(keys, addresses, redeem_script, tx, utxo, satoshis_per_b
             print "What is the current recommended fee amount?"
             satoshis_per_byte = int(raw_input("Satoshis per byte:"))
 
-        signed_tx = create_signed_transaction(
-            keys, addresses, redeem_script, tx, utxo)
+        unsigned_tx = create_unsigned_transaction(
+            source_address, keys, destinations, redeem_script, txs)
+
+        signed_tx = sign_transaction(source_address, keys,
+                                     redeem_script, unsigned_tx, txs)
+
         size = len(signed_tx["hex"]) / 2
 
         fee = size * satoshis_per_byte
-
         fee = satoshi_to_btc(fee)
 
         if fee > MAX_FEE:
@@ -380,16 +390,16 @@ def get_fee_interactive(keys, addresses, redeem_script, tx, utxo, satoshis_per_b
     return fee
 
 
-def get_utxo(tx, address):
-    utxo = None
+def get_utxos(tx, address):
+    utxos = []
 
     for output in tx["vout"]:
         out_addresses = output["scriptPubKey"]["addresses"]
         amount_btc = output["value"]
         if address in out_addresses:
-            utxo = output
+            utxos.append(output)
 
-    return utxo
+    return utxos
 
 
 def withdraw_interactive():
@@ -401,9 +411,10 @@ def withdraw_interactive():
         addresses = {}
 
         print """
-    Welcome to the multisig funds withdrawal script!
-    We will need several pieces of information to create a withdrawal transaction.
-    \n*** PLEASE BE SURE TO ENTER THE CORRECT DESTINATION ADDRESS ***\n"""
+        Welcome to the multisig funds withdrawal script!
+        We will need several pieces of information to create a withdrawal transaction.
+        \n*** PLEASE BE SURE TO ENTER THE CORRECT DESTINATION ADDRESS ***\n"""
+
         dest_address = raw_input("\nDestination address: ")
         addresses[dest_address] = 0
 
@@ -413,18 +424,33 @@ def withdraw_interactive():
         print "\nPlease provide the redeem script for this multisig address."
         redeem_script = raw_input("Redeem script: ")
 
-        print "\nPlease provide a raw transaction (hex format) with unspent outputs for this source address:"
-        hex_tx = raw_input()
+        print "\nHow many input transactions will you be using for this withdrawal?"
+        num_tx = int(raw_input("Tx #:"))
 
-        tx = json.loads(subprocess.check_output(
-            "bitcoin-cli decoderawtransaction {0}".format(hex_tx), shell=True))
-        utxo = get_utxo(tx, source_address)
+        txs = []
+        utxos = []
+        utxo_sum = Decimal(0).quantize(satoshi_places)
 
-        if not utxo:
+        while len(txs) < num_tx:
+            print "\nPlease provide raw transaction #{} (hex format) with unspent outputs for this source address:".format(len(txs) + 1)
+            hex_tx = raw_input()
+            tx = json.loads(subprocess.check_output(
+                "bitcoin-cli decoderawtransaction {0}".format(hex_tx), shell=True))
+            txs.append(tx)
+            utxos += get_utxos(tx, source_address)
+
+        if len(utxos) == 0:
             print "\nTransaction data not found for source address: {}".format(source_address)
             sys.exit()
         else:
-            print "\nTransaction data found for source address. \nAmount: {} btc".format(utxo["value"])
+            print "\nTransaction data found for source address."
+
+            for utxo in utxos:
+                value = Decimal(utxo["value"]).quantize(satoshi_places)
+                print "Amount: {} btc".format(value)
+                utxo_sum += value
+
+            print "TOTAL: {} btc".format(utxo_sum)
 
         print "How many private keys will you be signing with?"
         key_count = int(raw_input("#: "))
@@ -436,8 +462,10 @@ def withdraw_interactive():
 
         ###### fees, amount, and change #######
 
-        input_amount = Decimal(utxo["value"]).quantize(satoshi_places)
-        fee = get_fee_interactive(keys, addresses, redeem_script, tx, utxo)
+        input_amount = utxo_sum
+        fee = get_fee_interactive(
+            source_address, keys, addresses, redeem_script, txs)
+        # Got this far
         if fee > input_amount:
             print "ERROR: Input amount is less than recommended fee. Try using a larger input transaction. Exiting...."
             sys.exit()
@@ -494,8 +522,11 @@ def withdraw_interactive():
     #### Calculate Transaction ####
     print "\nCalculating transaction.....\n"
 
-    signed_tx = create_signed_transaction(
-        keys, addresses, redeem_script, tx, utxo)
+    unsigned_tx = create_unsigned_transaction(
+        source_address, keys, addresses, redeem_script, txs)
+
+    signed_tx = sign_transaction(source_address, keys,
+                                 redeem_script, unsigned_tx, txs)
 
     print "\nComplete signature?"
     print signed_tx["complete"]
@@ -503,17 +534,10 @@ def withdraw_interactive():
     print "\nSigned transaction (hex):"
     print signed_tx["hex"]
 
-    subprocess.call(
-        "qrencode -o tx.png {}".format(signed_tx["hex"]), shell=True)
-    tx_check = subprocess.check_output(
-        "zbarimg --quiet --raw tx.png", shell=True)
+    print "\nTransaction checksum (sha256):"
+    print hashSha256(signed_tx["hex"])
 
-    if tx_check.strip() != signed_tx["hex"]:
-        print "********************************************************************"
-        print "WARNING: transaction QR did not get encoded properly. This could be a sign of a security breach"
-        print "********************************************************************"
-
-    print "\nSigned transaction QR code stored at tx.png"
+    write_and_check_qr("Transaction", "tx.png", signed_tx["hex"])
 
 
 def make_seeds(n, length):
