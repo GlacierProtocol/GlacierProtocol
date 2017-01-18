@@ -33,11 +33,8 @@ import subprocess
 import json
 from decimal import Decimal
 
-# Pulled from Gavin Andresen's "bitcointools" python library:
-# https://github.com/gavinandresen/bitcointools/blob/f377bbe0882669423895c6e91b163d93d4fdf560/base58.py
-
-# TODO: replace with gavin's libraries.    Currently actually from keis's libraries.
-from base58 import b58encode, b58decode, b58encode_check, b58decode_check
+# Pulled from Gavin Andresen's "bitcointools" python library (exact link in source file)
+from base58 import b58encode
 
 satoshi_places = Decimal("0.00000001")
 
@@ -227,6 +224,7 @@ def get_address_for_privkey(privkey):
 
 
 def deposit_interactive(m, n, dice_length=62, seed_length=20):
+    safety_checklist()
     ensure_bitcoind()
 
     print "Creating {0}-of-{1} multisig address....\n".format(m, n)
@@ -455,6 +453,7 @@ def get_utxos(tx, address):
 
 
 def withdraw_interactive():
+    safety_checklist()
     ensure_bitcoind()
 
     approve = False
@@ -593,6 +592,7 @@ def withdraw_interactive():
 
 
 def make_seeds(n, length):
+    safety_checklist()
 
     print "Making {} seeds....".format(n)
     print "Please move your mouse to generate randomness if seeds don't appear right away\n"
@@ -603,6 +603,26 @@ def make_seeds(n, length):
             "xxd -l {} -p /dev/random".format(length), shell=True)
         seeds += 1
         print "Seed #{0}: {1}".format(seeds, seed.replace('\n', ''))
+
+
+def safety_checklist():
+
+    print "YOU ARE DOING THIS AT YOUR OWN RISK."
+
+    checks = [
+        "Are you running this on a computer WITHOUT a network connection of any kind?",
+        "Have the wireless cards in this computer been physically removed?",
+        "Are you running on battery power?",
+        "Is your battery fully charged?",
+        "Are you running on an operating system booted from a USB drive?",
+        "Is your screen hidden from view of windows, cameras, and other people?",
+        "Are smartphones and all other nearby devices turned off and in a Faraday bag?"]
+
+    for check in checks:
+        answer = raw_input(check + " (y/n)?")
+        if answer.upper() != "Y":
+            print "\n Safety check failed. Exiting....."
+            sys.exit()
 
 
 if __name__ == "__main__":
