@@ -34,10 +34,15 @@ def ensure_bitcoind():
 
 
 def write_and_check_qr(name, filename, data):
-    subprocess.call("qrencode -o {0} {1}".format(filename, data), shell=True)
+    """ 
+    Write a QR code and then read it back, ensuring that tricksy malware hasn't tampered with it.
 
-    # checking our qr codes to make sure that malware hasn't interfered with
-    # our ability to write QR codes
+    name: <string> short string describing the data
+    filename: <string> string QR code file name
+    data: <string> the string data to be encoded
+    """
+
+    subprocess.call("qrencode -o {0} {1}".format(filename, data), shell=True)
     check = subprocess.check_output(
         "zbarimg --quiet --raw {}".format(filename), shell=True)
 
@@ -49,9 +54,12 @@ def write_and_check_qr(name, filename, data):
     print "QR code for {0} in {1}".format(name, filename)
 
 
-#### Dice handling functions ####
-
 def check_dice(dices):
+    """
+    Validates dice data.
+
+    dices: <string> representing list of dice rolls. Each digit should be between 1 and 6
+    """
 
     for dice in dices:
         try:
@@ -67,7 +75,11 @@ def check_dice(dices):
 
 
 def read_dice_interactive(min_length):
-    """reads min_length dice from standard in and returns a string representing the dice rolls"""
+    """
+    Reads min_length dice from standard in and returns a string representing the dice rolls
+
+    min_length: <+int> number of dice rolls required
+    """
 
     def ask_for_dice_rolls(x):
         print "enter {0} dice rolls:".format(x)
@@ -84,9 +96,14 @@ def read_dice_interactive(min_length):
     return results
 
 
-#### Random Seed functions ####
-
 def check_seed(seed, min_length):
+    """
+    Validates random hex seed
+
+    seed: <string> random hex string
+    min_length: <int> number of characters required
+    """
+
     if len(seed) < min_length:
         print "Error: seed must be at least {0} hex characters long".format(min_length)
         return False
@@ -105,7 +122,11 @@ def check_seed(seed, min_length):
 
 
 def read_seed_interactive(min_length):
-    """Reads random seed of at least min_length characters and returns it as string"""
+    """
+    Reads random seed of at least min_length characters and returns it as string
+
+    min_length: <int> the number of characters to read of the seed
+    """
 
     def ask_for_random_seed(length):
         print "enter random seed as a hex string with at least {0} characters".format(length)
@@ -120,9 +141,10 @@ def read_seed_interactive(min_length):
     return seed
 
 
-#### main private key creation functions #####
-
 def xor_hex_strings(str1, str2):
+    """
+    Return xor of two hex strings
+    """
     str1_dec = int(str1, 16)
     str2_dec = int(str2, 16)
 
@@ -132,6 +154,9 @@ def xor_hex_strings(str1, str2):
 
 
 def seed_to_privkey(seed):
+    """ 
+    Converts a 256 bit hex string to a bitcoin private key format
+    """
     seed_80 = "80" + seed
     key = seed_80 + checksum(seed_80)
     return key
