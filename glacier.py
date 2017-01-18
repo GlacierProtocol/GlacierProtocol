@@ -361,10 +361,13 @@ def create_unsigned_transaction(source_address, destinations, redeem_script, txs
     txs: List<dict> List of transactions in dictionary form (bitcoind decoded format)
     """
 
+    # prune addresses sent 0 btc
     for address, value in destinations.items():
         if value == "0":
             del destinations[address]
 
+    # For each UTXO used as input, we need the txid and vout index to generate
+    # a transaction
     inputs = []
     for tx in txs:
         utxos = get_utxos(tx, source_address)
@@ -397,6 +400,8 @@ def sign_transaction(source_address, keys, redeem_script, unsigned_hex, txs):
     txs: List<dict> A list of transactions to use as input (bitcoind decoded format)
     """
 
+    # For each UTXO used as input, we need the txid, vout index, scriptPubKey, and redeemScript
+    # to generate a signature
     inputs = []
     for tx in txs:
         utxos = get_utxos(tx, source_address)
@@ -486,6 +491,13 @@ def get_fee_interactive(source_address, keys, destinations, redeem_script, txs, 
 
 
 def get_utxos(tx, address):
+    """ 
+    Given a transaction, find all the outputs that were sent to an address
+    return => List<Dictionary> list of UTXOs in bitcoin core format
+
+    tx - <Dictionary> in bitcoind core format
+    address - <string>
+    """
     utxos = []
 
     for output in tx["vout"]:
