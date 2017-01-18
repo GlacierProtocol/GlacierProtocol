@@ -1,5 +1,28 @@
 #!/usr/bin/env python
 
+################################################################################################
+#
+# GlacierScript:  Part of the Glacier Protocol (http://glacierprotocol.org)
+# 
+# GlacierScript is designed specifically for use in the context of executing the broader Glacier 
+# Protocol, a step-by-step procedure for high-security cold storage of Bitcoin.  It is not
+# intended to be used as standalone software.
+#
+# GlacierScript primarily replaces tasks that users would otherwise be doing manually, such as
+# typing things on the command line and copying-and-pasting strings.  It mostly consists of
+# print statements, user input, a bit of string manipulation, and command-line wrappers around
+# Bitcoin Core and other applications (e.g. those involved in reading and writing QR codes.)
+#
+# GlacierScript avoids cryptographic and other security-sensitive operations as much as possible.
+#
+# GlacierScript leverages the following command-line applications:
+# - Bitcoin Core (http://bitcoincore.org)
+# - qrencode (QR code writer: http://packages.ubuntu.com/xenial/qrencode)
+# - zbarimg (QR code reader: http://packages.ubuntu.com/xenial/zbar-tools)
+#
+################################################################################################
+
+# standard Python libraries
 import time
 import argparse
 import sys
@@ -10,6 +33,10 @@ import subprocess
 import json
 from decimal import Decimal
 
+# Pulled from Gavin Andresen's "bitcointools" python library:
+# https://github.com/gavinandresen/bitcointools/blob/f377bbe0882669423895c6e91b163d93d4fdf560/base58.py
+
+# TODO: replace with gavin's libraries.    Currently actually from keis's libraries.
 from base58 import b58encode, b58decode, b58encode_check, b58decode_check
 
 satoshi_places = Decimal("0.00000001")
@@ -35,11 +62,11 @@ def ensure_bitcoind():
 
 def write_and_check_qr(name, filename, data):
     """ 
-    Write a QR code and then read it back, ensuring that tricksy malware hasn't tampered with it.
+    Write a QR code and then read it back to try and detect any tricksy malware tampering with it.
 
-    name: <string> short string describing the data
-    filename: <string> string QR code file name
-    data: <string> the string data to be encoded
+    name: <string> short description of the data
+    filename: <string> filename for storing the QR code
+    data: <string> the data to be encoded
     """
 
     subprocess.call("qrencode -o {0} {1}".format(filename, data), shell=True)
@@ -48,7 +75,7 @@ def write_and_check_qr(name, filename, data):
 
     if check.strip() != data:
         print "********************************************************************"
-        print "WARNING: {} QR did not get encoded properly. This could be a sign of a security breach".format(name)
+        print "WARNING: {} QR code could not be verified properly. This could be a sign of a security breach.".format(name)
         print "********************************************************************"
 
     print "QR code for {0} in {1}".format(name, filename)
