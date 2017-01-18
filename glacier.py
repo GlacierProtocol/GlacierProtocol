@@ -39,16 +39,23 @@ from base58 import b58encode
 satoshi_places = Decimal("0.00000001")
 
 
-#### Manage bitcoin core ####
 
-def ensure_bitcoind():
+def ensure_bitcoind_running():
+    """
+    Start bitcoind (if it's not already running) and ensure it's functioning properly
+    """
     devnull = open("/dev/null")
 
+    # start bitcoind.  If another bitcoind process is already running, this will just print an error
+    # message (to /dev/null) and exit.
+    #
+    # -connect=0.0.0.0 because we're doing local operations only (and have no network connection anyway)
     subprocess.call("bitcoind -daemon -connect=0.0.0.0",
                     shell=True, stdout=devnull, stderr=devnull)
 
+    # verify bitcoind started up and is functioning correctly
     times = 0
-    while times < 10:
+    while times <= 10:
         times += 1
         if subprocess.call("bitcoin-cli getinfo", shell=True, stdout=devnull, stderr=devnull) == 0:
             return
@@ -57,7 +64,7 @@ def ensure_bitcoind():
     raise Exception("Timeout while starting bitcoin server")
 
 
-def write_and_check_qr(name, filename, data):
+def write_and_verify_qr_code(name, filename, data):
     """ 
     Write a QR code and then read it back to try and detect any tricksy malware tampering with it.
 
@@ -78,16 +85,20 @@ def write_and_check_qr(name, filename, data):
     print "QR code for {0} in {1}".format(name, filename)
 
 
-def check_dice(dices):
+def validate_dice_rolls(dice, min_length):
     """
-    Validates dice data.
+    Validates dice data (i.e. ensures all digits are between 1 and 6).
 
-    dices: <string> representing list of dice rolls. Each digit should be between 1 and 6
+    dice: <string> representing list of dice rolls (e.g. "5261435236...")
     """
 
-    for dice in dices:
+    if len(dice) < min_length:
+        print "Error: must provide at least {0} dice rolls".format(min_length)
+        return False
+
+    for die in dice:
         try:
-            i = int(dice)
+            i = int(die)
             if i < 1 or i > 6:
                 print "Error: dice rolls must be between 1 and 6"
                 return False
@@ -97,35 +108,33 @@ def check_dice(dices):
 
     return True
 
-
-def read_dice_interactive(min_length):
+def read_dice_rolls_interactive(min_length):
     """
-    Reads min_length dice from standard in and returns a string representing the dice rolls
+    Reads min_length dice rolls from standard input, as a string of consecutive integers
+    Returns a string representing the dice rolls
 
-    min_length: <+int> number of dice rolls required
+    min_length: <int> number of dice rolls required.  > 0.
     """
 
     def ask_for_dice_rolls(x):
         print "enter {0} dice rolls:".format(x)
 
-    results = ""
+    ask_for_dice_rolls(min_length)
+    dice = raw_input()
 
-    while len(results) < min_length:
-        ask_for_dice_rolls(min_length - len(results))
-        dices = raw_input()
+    while not validate_dice_rolls(dice, min_length):
+        ask_for_dice_rolls(min_length)
+        dice = raw_input()
 
-        if check_dice(dices):
-            results += dices
-
-    return results
+    return dice
 
 
-def check_seed(seed, min_length):
+def validate_random_seed(seed, min_length):
     """
-    Validates random hex seed
+    Validates random hexadecimal seed
 
-    seed: <string> random hex string
-    min_length: <int> number of characters required
+    seed: <string> hex string to be validated
+    min_length: <int> number of characters required.  > 0
     """
 
     if len(seed) < min_length:
@@ -139,17 +148,19 @@ def check_seed(seed, min_length):
     try:
         int(seed, 16)
     except ValueError:
-        print "Error: Illegal character. Seed must be composed of hex characters"
+        print "Error: Illegal character. Seed must be composed of hex characters (0-9, a-f)"
         return False
 
     return True
 
 
-def read_seed_interactive(min_length):
+def read_random_seed_interactive(min_length):
     """
-    Reads random seed of at least min_length characters and returns it as string
+    Reads random seed (of at least min_length hexadecimal characters) from standard input
+    Returns it as a string
 
-    min_length: <int> the number of characters to read of the seed
+    min_length: <int> minimum number of characters in the seed.  must be even and > 0.
+            print "{0} dice rolls read.".format(len(dice))
     """
 
     def ask_for_random_seed(length):
@@ -158,7 +169,7 @@ def read_seed_interactive(min_length):
     ask_for_random_seed(min_length)
     seed = raw_input()
 
-    while not check_seed(seed, min_length):
+    while not validate_random_seed(seed, min_length):
         ask_for_random_seed(min_length)
         seed = raw_input()
 
@@ -167,7 +178,9 @@ def read_seed_interactive(min_length):
 
 def xor_hex_strings(str1, str2):
     """
-    Return xor of two hex strings
+    Return string of the XOR of two hexadecimal numbers
+    str1: <string> first hex number
+    str2: <string> second hex number
     """
     str1_dec = int(str1, 16)
     str2_dec = int(str2, 16)
@@ -177,55 +190,65 @@ def xor_hex_strings(str1, str2):
     return "{:02x}".format(xored)
 
 
-def seed_to_privkey(seed):
+def hex_private_key_to_WIF_private_key(hex_key):
     """ 
-    Converts a 256 bit hex string to a bitcoin private key format
+    Converts a raw 256-bit hex private key to WIF format
     """
-    seed_80 = "80" + seed
-    key = seed_80 + checksum(seed_80)
-    return key
+
+    hex_key_with_prefix = "80" + hex_key
+
+    h1 = hash_sha256(hex_key_with_prefix.decode("hex"))
+    h2 = hash_sha256(h1.decode("hex"))
+    checksum = h2[0:8]
+
+    wif_key_before_base58Check = hex_key_with_prefix + checksum
+    wif_key = b58encode(wif_key_before_base58Check.decode("hex"))
+
+    return wif_key
 
 
-def key_to_WIF(key):
-    key_58 = b58encode(key.decode("hex"))
-    return key_58
-
-
-def hashSha256(s):
-    """A thin wrapper around the hashlib sha 256 library to provide a more functional interface"""
+def hash_sha256(s):
+    """A thin wrapper around the hashlib SHA256 library to provide a more functional interface"""
     m = sha256()
     m.update(s)
     return m.hexdigest()
 
 
-def checksum(s):
-    h1 = hashSha256(s.decode("hex"))
-    h2 = hashSha256(h1.decode("hex"))
-    return h2[0:8]
-
-
-#### multisig creation functions #####
-
-def get_address_for_privkey(privkey):
+def get_address_for_wif_privkey(privkey):
     """A method for retrieving the address associated with a private key from bitcoin core
        <privkey> - a bitcoin private key in WIF format"""
 
-    # Arbitrary label. A unique label ensures that we will get back only one public key
-    # when we call the "getaddressesbyaccount" rpc later
+    # Bitcoin Core doesn't have an RPC for "get the addresses associated w/this private key"
+    # just "get the addresses associated with this account"
+    # where "account" corresponds to an arbitrary tag we can associate with each private key
+    # so, we'll generate a unique "account number" to put this private key into.
+    #
+    # we're running on a fresh bitcoind installation in the Glacier Protocol, so there's no
+    # meaningful risk here of colliding with previously-existing account numbers.
+    account_number = random.randint(0, 2**128)
 
-    ensure_bitcoind()
-    label = random.randint(0, 2**128)
+    ensure_bitcoind_running()
     subprocess.call(
-        "bitcoin-cli importprivkey {0} {1}".format(privkey, label), shell=True)
+        "bitcoin-cli importprivkey {0} {1}".format(privkey, account_number), shell=True)
     addresses = subprocess.check_output(
-        "bitcoin-cli getaddressesbyaccount {0}".format(label), shell=True)
+        "bitcoin-cli getaddressesbyaccount {0}".format(account_number), shell=True)
+
+    # extract address from JSON output
     addresses_json = json.loads(addresses)
     return addresses_json[0]
 
 
 def deposit_interactive(m, n, dice_length=62, seed_length=20):
+    """
+    Take the user through all steps for assisting with a cold storage deposit.
+    m: <int> number of multisig keys required for withdrawal
+    n: <int> total number of multisig keys
+    dice_length: <int> minimum number of dice rolls required
+    seed_length: <int> minimum length of random seed required
+    """
+
     safety_checklist()
-    ensure_bitcoind()
+    ensure_bitcoind_running()
 
     print "Creating {0}-of-{1} multisig address....\n".format(m, n)
 
@@ -235,31 +258,29 @@ def deposit_interactive(m, n, dice_length=62, seed_length=20):
         index = len(keys) + 1
         print "Generating address #{}".format(index)
 
-        dice_string = read_dice_interactive(dice_length)
-        dice_hash = hashSha256(dice_string)
+        dice_string = read_dice_rolls_interactive(dice_length)
+        dice_hash = hash_sha256(dice_string)
 
-        seed_string = read_seed_interactive(seed_length)
-        seed_hash = hashSha256(seed_string)
+        seed_string = read_random_seed_interactive(seed_length)
+        seed_hash = hash_sha256(seed_string)
 
         # back to hex string
         combined_seed = xor_hex_strings(dice_hash, seed_hash)
-        privkey = seed_to_privkey(combined_seed)
-        privkey_WIF = key_to_WIF(privkey)
+        WIF_private_key = hex_private_key_to_WIF_private_key(combined_seed)
 
         print "\nPrivate key #{}:".format(index)
-        print "{}\n".format(privkey_WIF)
+        print "{}\n".format(WIF_private_key)
 
-        keys.append(privkey_WIF)
+        keys.append(WIF_private_key)
 
     print "Keys created. Generating {0}-of-{1} multisig address....\n".format(m, n)
 
-    addresses = [get_address_for_privkey(key) for key in keys]
-
+    addresses = [get_address_for_wif_privkey(key) for key in keys]
     address_string = json.dumps(addresses)
-    label = random.randint(0, 2**128)
+    # line below is unneeded now, right?
+    # label = random.randint(0, 2**128)
 
     argstring = "{0} '{1}'".format(m, address_string)
-
     results = subprocess.check_output(
         "bitcoin-cli createmultisig {0}".format(argstring), shell=True)
     results = json.loads(results)
@@ -275,47 +296,9 @@ def deposit_interactive(m, n, dice_length=62, seed_length=20):
     print "{}".format(results["redeemScript"])
     print ""
 
-    write_and_check_qr("Multisig address", "address.png", results["address"])
-    write_and_check_qr("Redeem Script", "redemption.png",
+    write_and_verify_qr_code("Multisig address", "address.png", results["address"])
+    write_and_verify_qr_code("Redeem Script", "redemption.png",
                        results["redeemScript"])
-
-
-#### multisig redemption functions ####
-
-def multisig_gen_trx(addresses, redeem_script, in_txid, in_vout, in_script_pub_key, privkeys):
-    """generate a signed multisig transaction
-    addresses: a dictionary of base58 bitcoin destination addresses to decimal bitcoin ammounts
-    redeem_script: hex string,
-    in_txid: txid of an input transaction to the multisig address
-    in_vout: which output you are sending
-    in_output_script: the scriptPubKey of the output
-    privkeys: an array of private keys to sign with"""
-
-    ensure_bitcoind()
-    data_1 = [{
-        "txid": in_txid,
-        "vout": int(in_vout)
-    }]
-
-    argstring_1 = "'{0}' '{1}'".format(
-        json.dumps(data_1), json.dumps(addresses))
-
-    tx_hex = subprocess.check_output(
-        "bitcoin-cli createrawtransaction {0}".format(argstring_1), shell=True).strip()
-
-    data_2 = [{
-        "txid": in_txid,
-        "vout": int(in_vout),
-        "scriptPubKey": in_script_pub_key,
-        "redeemScript": redeem_script
-    }]
-
-    argstring_2 = "{0} '{1}' '{2}'".format(
-        tx_hex, json.dumps(data_2), json.dumps(privkeys))
-    signed_tx_hex = subprocess.check_output(
-        "bitcoin-cli signrawtransaction {0}".format(argstring_2), shell=True).strip()
-
-    return signed_tx_hex
 
 
 def yes_no_interactive():
@@ -330,12 +313,12 @@ def yes_no_interactive():
         if confirm.upper() == "N":
             return False
         else:
-            print "You must enter y or n"
+            print "You must enter y (for yes) or n (for no)"
             confirm = confirm_prompt()
 
 
 def create_unsigned_transaction(source_address, keys, destinations, redeem_script, txs):
-    ensure_bitcoind()
+    ensure_bitcoind_running()
 
     for address, value in destinations.items():
         if value == "0":
@@ -404,11 +387,11 @@ def get_fee_interactive(source_address, keys, destinations, redeem_script, txs, 
       satoshis_per_byte: an INT 
     """
 
-    ensure_bitcoind()
-    MAX_FEE = .005  # in btc
+    MAX_FEE = .005  # in btc.  hardcoded limit to protect against user typos
+
+    ensure_bitcoind_running()
 
     approve = False
-
     while not approve:
 
         if not satoshis_per_byte:
@@ -454,7 +437,7 @@ def get_utxos(tx, address):
 
 def withdraw_interactive():
     safety_checklist()
-    ensure_bitcoind()
+    ensure_bitcoind_running()
 
     approve = False
 
@@ -586,9 +569,9 @@ def withdraw_interactive():
     print signed_tx["hex"]
 
     print "\nTransaction checksum (sha256):"
-    print hashSha256(signed_tx["hex"])
+    print hash_sha256(signed_tx["hex"])
 
-    write_and_check_qr("Transaction", "tx.png", signed_tx["hex"])
+    write_and_verify_qr_code("Transaction", "tx.png", signed_tx["hex"])
 
 
 def make_seeds(n, length):
