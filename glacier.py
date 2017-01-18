@@ -12,12 +12,14 @@ from decimal import Decimal
 
 from base58 import b58encode
 
-satoshi_places = Decimal("0.00000001")
+SATOSHI_PLACES = Decimal("0.00000001")
 
-
-#### Manage bitcoin core ####
 
 def ensure_bitcoind():
+    """ 
+    Ensures that the bitcoind daemon is running
+    """
+
     devnull = open("/dev/null")
 
     subprocess.call("bitcoind -daemon -connect=0.0.0.0",
@@ -57,6 +59,7 @@ def write_and_check_qr(name, filename, data):
 def check_dice(dices):
     """
     Validates dice data.
+    returns => <boolean>
 
     dices: <string> representing list of dice rolls. Each digit should be between 1 and 6
     """
@@ -77,6 +80,7 @@ def check_dice(dices):
 def read_dice_interactive(min_length):
     """
     Reads min_length dice from standard in and returns a string representing the dice rolls
+    returns => <string>
 
     min_length: <+int> number of dice rolls required
     """
@@ -99,6 +103,7 @@ def read_dice_interactive(min_length):
 def check_seed(seed, min_length):
     """
     Validates random hex seed
+    returns => <boolean>
 
     seed: <string> random hex string
     min_length: <int> number of characters required
@@ -124,6 +129,7 @@ def check_seed(seed, min_length):
 def read_seed_interactive(min_length):
     """
     Reads random seed of at least min_length characters and returns it as string
+    returns => string
 
     min_length: <int> the number of characters to read of the seed
     """
@@ -144,6 +150,7 @@ def read_seed_interactive(min_length):
 def xor_hex_strings(str1, str2):
     """
     Return xor of two hex strings
+    returns => <string> in hex format
     """
     str1_dec = int(str1, 16)
     str2_dec = int(str2, 16)
@@ -156,13 +163,19 @@ def xor_hex_strings(str1, str2):
 def seed_to_privkey(seed):
     """ 
     Converts a 256 bit hex string to a bitcoin private key format
+    returns => <string> in hex format
     """
+
     seed_80 = "80" + seed
     key = seed_80 + checksum(seed_80)
     return key
 
 
 def key_to_WIF(key):
+    """ 
+    Converts a bitcoin private key in hex format to WIF
+    returns => <string> WIF format
+    """
     key_58 = b58encode(key.decode("hex"))
     return key_58
 
@@ -189,7 +202,6 @@ def get_address_for_privkey(privkey):
     # Arbitrary label. A unique label ensures that we will get back only one public key
     # when we call the "getaddressesbyaccount" rpc later
 
-    ensure_bitcoind()
     label = random.randint(0, 2**128)
     subprocess.call(
         "bitcoin-cli importprivkey {0} {1}".format(privkey, label), shell=True)
@@ -267,7 +279,6 @@ def multisig_gen_trx(addresses, redeem_script, in_txid, in_vout, in_script_pub_k
     in_output_script: the scriptPubKey of the output
     privkeys: an array of private keys to sign with"""
 
-    ensure_bitcoind()
     data_1 = [{
         "txid": in_txid,
         "vout": int(in_vout)
@@ -310,8 +321,16 @@ def yes_no_interactive():
             confirm = confirm_prompt()
 
 
-def create_unsigned_transaction(source_address, keys, destinations, redeem_script, txs):
-    ensure_bitcoind()
+def create_unsigned_transaction(source_address, destinations, redeem_script, txs):
+    """
+    Returns a hex string representing an unsigned bitcoin transaction
+    output => <string>
+
+    source_address: <string> 
+    destinations: {address <string>: amount<string>} dictionary mapping destination addresses to amount in BTC
+    redeem_script: <string>
+    txs: List<dict> List of transactions in dictionary form (bitcoind decoded format)
+    """
 
     for address, value in destinations.items():
         if value == "0":
@@ -338,6 +357,16 @@ def create_unsigned_transaction(source_address, keys, destinations, redeem_scrip
 
 
 def sign_transaction(source_address, keys, redeem_script, unsigned_hex, txs):
+    """
+    Creates a signed transaction
+    output => dictionary {"hex": transaction <string>, "complete": <boolean>}
+
+    source_address: <string>
+    keys: List<string> The private keys you wish to sign with
+    redeem_script: <string> 
+    unsigned_hex: <string> The unsigned transaction, in hex format
+    txs: List<dict> A list of transactions to use as input (bitcoind decoded format)
+    """
 
     inputs = []
     for tx in txs:
@@ -360,11 +389,23 @@ def sign_transaction(source_address, keys, redeem_script, unsigned_hex, txs):
 
 
 def satoshi_to_btc(satoshi):
+    """ 
+    Converts a value in satoshi to a value in BTC
+    outputs => Decimal
+
+    satoshi: <int>
+    """
     value = Decimal(satoshi) / Decimal(100000000)
-    return value.quantize(satoshi_places)
+    return value.quantize(SATOSHI_PLACES)
 
 
 def btc_to_satoshi(btc):
+    """ 
+    Converts a value in BTC to satoshi
+    outputs => <int>
+
+    btc: <Decimal> or <Float> 
+    """
     value = btc * 100000000
     return int(value)
 
@@ -380,7 +421,6 @@ def get_fee_interactive(source_address, keys, destinations, redeem_script, txs, 
       satoshis_per_byte: an INT 
     """
 
-    ensure_bitcoind()
     MAX_FEE = .005  # in btc
 
     approve = False
@@ -392,7 +432,7 @@ def get_fee_interactive(source_address, keys, destinations, redeem_script, txs, 
             satoshis_per_byte = int(raw_input("Satoshis per byte:"))
 
         unsigned_tx = create_unsigned_transaction(
-            source_address, keys, destinations, redeem_script, txs)
+            source_address, destinations, redeem_script, txs)
 
         signed_tx = sign_transaction(source_address, keys,
                                      redeem_script, unsigned_tx, txs)
@@ -456,7 +496,7 @@ def withdraw_interactive():
 
         txs = []
         utxos = []
-        utxo_sum = Decimal(0).quantize(satoshi_places)
+        utxo_sum = Decimal(0).quantize(SATOSHI_PLACES)
 
         while len(txs) < num_tx:
             print "\nPlease provide raw transaction #{} (hex format) with unspent outputs for this source address:".format(len(txs) + 1)
@@ -473,7 +513,7 @@ def withdraw_interactive():
             print "\nTransaction data found for source address."
 
             for utxo in utxos:
-                value = Decimal(utxo["value"]).quantize(satoshi_places)
+                value = Decimal(utxo["value"]).quantize(SATOSHI_PLACES)
                 print "Amount: {} btc".format(value)
                 utxo_sum += value
 
@@ -506,7 +546,7 @@ def withdraw_interactive():
         if amount == "":
             amount = input_amount - fee
         else:
-            amount = Decimal(amount).quantize(satoshi_places)
+            amount = Decimal(amount).quantize(SATOSHI_PLACES)
 
         if fee + amount > input_amount:
             print "Error: fee + destination amount greater than input amount"
@@ -550,7 +590,7 @@ def withdraw_interactive():
     print "\nCalculating transaction.....\n"
 
     unsigned_tx = create_unsigned_transaction(
-        source_address, keys, addresses, redeem_script, txs)
+        source_address, addresses, redeem_script, txs)
 
     signed_tx = sign_transaction(source_address, keys,
                                  redeem_script, unsigned_tx, txs)
