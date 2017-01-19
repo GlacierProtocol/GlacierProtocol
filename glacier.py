@@ -575,8 +575,8 @@ def deposit_interactive(m, n, dice_seed_length=62, rng_seed_length=20):
     print "{}".format(results["redeemScript"])
     print ""
 
-    write_and_verify_qr_code("Cold storage address", "address.png", results["address"])
-    write_and_verify_qr_code("Redemption script", "redemption.png",
+    write_and_verify_qr_code("cold storage address", "address.png", results["address"])
+    write_and_verify_qr_code("redemption script", "redemption.png",
                        results["redeemScript"])
 
 
@@ -723,7 +723,7 @@ def withdraw_interactive():
     print "\nTransaction checksum (md5):"
     print hash_md5(signed_tx["hex"])
 
-    write_and_verify_qr_code("Transaction", "tx.png", signed_tx["hex"])
+    write_and_verify_qr_code("transaction", "transaction.png", signed_tx["hex"])
 
 
 ################################################################################################
