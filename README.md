@@ -1,2 +1,2 @@
-# cold_bitcoin
-bitcoin cold storage protocol resources 
+# Glacier Protocol
+http://www.glacierprotocol.org
