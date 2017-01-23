@@ -473,7 +473,6 @@ def safety_checklist():
         "Are you running this on a computer WITHOUT a network connection of any kind?",
         "Have the wireless cards in this computer been physically removed?",
         "Are you running on battery power?",
-        "Is your battery fully charged?",
         "Are you running on an operating system booted from a USB drive?",
         "Is your screen hidden from view of windows, cameras, and other people?",
         "Are smartphones and all other nearby devices turned off and in a Faraday bag?"]
@@ -499,7 +498,7 @@ def entropy(n, length):
 
     print "\n\n"
     print "Making {} seeds....".format(n)
-    print "If seeds don't appear right away, please continually move your mouse cursor. These movements generate entropy which are used to create random numbers.\n"
+    print "If seeds don't appear right away, please continually move your mouse cursor. These movements generate entropy which is used to create random numbers.\n"
 
     seeds = 0
     while seeds < n:
