@@ -627,9 +627,8 @@ def withdraw_interactive():
     while not approve:
         addresses = {}
 
-        print """
-        You will need to enter several pieces of information to create a withdrawal transaction.
-        \n*** PLEASE BE SURE TO ENTER THE CORRECT DESTINATION ADDRESS ***\n"""
+        print "\nYou will need to enter several pieces of information to create a withdrawal transaction."
+        print "\n\n*** PLEASE BE SURE TO ENTER THE CORRECT DESTINATION ADDRESS ***\n"
 
         source_address = raw_input("\nSource cold storage address: ")
         addresses[source_address] = 0
