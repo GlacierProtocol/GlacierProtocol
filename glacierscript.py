@@ -522,13 +522,13 @@ def format_chunks(size, string):
 
 def entropy(n, length):
     """
-    Generate n random seeds for the user from /dev/random
+    Generate n random strings for the user from /dev/random
     """
     safety_checklist()
 
     print "\n\n"
-    print "Making {} seeds....".format(n)
-    print "If seeds don't appear right away, please continually move your mouse cursor. These movements generate entropy which is used to create random numbers.\n"
+    print "Making {} random data strings....".format(n)
+    print "If strings don't appear right away, please continually move your mouse cursor. These movements generate entropy which is used to create random data.\n"
 
     idx = 0
     while idx < n:
@@ -575,9 +575,6 @@ def deposit_interactive(m, n, dice_seed_length=62, rng_seed_length=20):
         # back to hex string
         hex_private_key = xor_hex_strings(dice_seed_hash, rng_seed_hash)
         WIF_private_key = hex_private_key_to_WIF_private_key(hex_private_key)
-
-        print "\nPrivate key #{}:".format(index)
-        print "{}\n".format(WIF_private_key)
 
         keys.append(WIF_private_key)
 
