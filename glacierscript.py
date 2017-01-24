@@ -196,12 +196,14 @@ def xor_hex_strings(str1, str2):
 
     returns => <string> in hex format
     """
+    if len(str1) != len(str2):
+        raise Exception("tried to xor strings of unequal length")
     str1_dec = int(str1, 16)
     str2_dec = int(str2, 16)
 
     xored = str1_dec ^ str2_dec
 
-    return "{:02x}".format(xored)
+    return "{:0{}x}".format(xored, max(len(str1), len(str2)))
 
 
 def hex_private_key_to_WIF_private_key(hex_key):
@@ -279,7 +281,7 @@ def get_address_for_wif_privkey(privkey):
 def get_utxos(tx, address):
     """ 
     Given a transaction, find all the outputs that were sent to an address
-    return => List<Dictionary> list of UTXOs in bitcoin core format
+    returns => List<Dictionary> list of UTXOs in bitcoin core format
 
     tx - <Dictionary> in bitcoind core format
     address - <string>
@@ -298,7 +300,7 @@ def get_utxos(tx, address):
 def create_unsigned_transaction(source_address, destinations, redeem_script, input_txs):
     """
     Returns a hex string representing an unsigned bitcoin transaction
-    output => <string>
+    returns => <string>
 
     source_address: <string> input_txs will be filtered for utxos to this source address
     destinations: {address <string>: amount<string>} dictionary mapping destination addresses to amount in BTC
@@ -373,6 +375,7 @@ def get_fee_interactive(source_address, keys, destinations, redeem_script, input
     Returns a recommended transaction fee, given market fee data provided by the user interactively
     Because fees tend to be a function of transaction size, we build the transaction in order to 
     recomend a fee.
+    return => <Decimal> fee value
 
     Parameters:
       source_address: <string> input_txs will be filtered for utxos to this source address
