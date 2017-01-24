@@ -548,9 +548,6 @@ def deposit_interactive(m, n, dice_seed_length=62, rng_seed_length=20):
         hex_private_key = xor_hex_strings(dice_seed_hash, rng_seed_hash)
         WIF_private_key = hex_private_key_to_WIF_private_key(hex_private_key)
 
-        print "\nPrivate key #{}:".format(index)
-        print "{}\n".format(WIF_private_key)
-
         keys.append(WIF_private_key)
 
     print "Private keys created."
