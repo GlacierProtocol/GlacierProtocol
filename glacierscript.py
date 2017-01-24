@@ -119,18 +119,22 @@ def read_rng_seed_interactive(min_length):
     Reads random seed (of at least min_length hexadecimal characters) from standard input
     returns => string
 
-    min_length: <int> minimum number of characters in the seed.  must be even and > 0.
+    min_length: <int> minimum number of bytes in the seed.
     """
+
+    char_length = min_length * 2
 
     def ask_for_rng_seed(length):
         print "Enter at least {0} characters of computer entropy:".format(length)
 
-    ask_for_rng_seed(min_length)
+    ask_for_rng_seed(char_length)
     seed = raw_input()
+    seed = unchunk(seed)
 
-    while not validate_rng_seed(seed, min_length):
-        ask_for_rng_seed(min_length)
+    while not validate_rng_seed(seed, char_length):
+        ask_for_rng_seed(char_length)
         seed = raw_input()
+        seed = unchunk(seed)
 
     return seed
 
@@ -174,10 +178,12 @@ def read_dice_seed_interactive(min_length):
 
     ask_for_dice_seed(min_length)
     dice = raw_input()
+    dice = unchunk(dice)
 
     while not validate_dice_seed(dice, min_length):
         ask_for_dice_seed(min_length)
         dice = raw_input()
+        dice = unchunk(dice)
 
     return dice
 
@@ -493,6 +499,27 @@ def safety_checklist():
 #
 ################################################################################################
 
+
+def unchunk(string):
+    """
+    Remove spaces in string
+    """
+    return string.replace(" ", "")
+
+
+def format_chunks(size, string):
+    """ 
+    Splits a string into chunks of [size] characters, for easy human readability
+    """
+    tail = ""
+    remainder = len(string) % size
+    arr = [string[size * i: size * i + size] for i in range(len(string) / size)]
+    body = " ".join(arr)
+    if remainder > 0:
+        tail = string[-remainder:]
+    return body + " " + tail
+
+
 def entropy(n, length):
     """
     Generate n random seeds for the user from /dev/random
@@ -503,12 +530,13 @@ def entropy(n, length):
     print "Making {} seeds....".format(n)
     print "If seeds don't appear right away, please continually move your mouse cursor. These movements generate entropy which is used to create random numbers.\n"
 
-    seeds = 0
-    while seeds < n:
+    idx = 0
+    while idx < n:
         seed = subprocess.check_output(
             "xxd -l {} -p /dev/random".format(length), shell=True)
-        seeds += 1
-        print "Computer entropy #{0}: {1}".format(seeds, seed.replace('\n', ''))
+        idx += 1
+        seed = seed.replace('\n', '')
+        print "Computer entropy #{0}: {1}".format(idx, format_chunks(4, seed))
 
 
 ################################################################################################
@@ -739,9 +767,9 @@ def withdraw_interactive():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('program', choices=[
-                        'entropy', 'deposit', 'withdraw'])
+                        'entropy', 'create-deposit-data', 'create-withdrawal-data'])
 
-    parser.add_argument("--num_keys", type=int,
+    parser.add_argument("--num-keys", type=int,
                         help="The number of keys to create random entropy for", default=1)
     parser.add_argument("-d", "--dice", type=int,
                         help="The minimum number of dice rolls to use for entropy when generating private keys (default: 62)", default=62)
@@ -756,8 +784,8 @@ if __name__ == "__main__":
     if args.program == "entropy":
         entropy(args.num_keys, args.rng)
 
-    if args.program == "deposit":
+    if args.program == "create-deposit-data":
         deposit_interactive(args.m, args.n, args.dice, args.rng)
 
-    if args.program == "withdraw":
+    if args.program == "create-withdrawal-data":
         withdraw_interactive()
