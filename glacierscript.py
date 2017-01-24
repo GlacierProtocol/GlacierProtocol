@@ -495,13 +495,13 @@ def safety_checklist():
 
 def entropy(n, length):
     """
-    Generate n random seeds for the user from /dev/random
+    Generate n random strings for the user from /dev/random
     """
     safety_checklist()
 
     print "\n\n"
-    print "Making {} seeds....".format(n)
-    print "If seeds don't appear right away, please continually move your mouse cursor. These movements generate entropy which is used to create random numbers.\n"
+    print "Making {} random data strings....".format(n)
+    print "If strings don't appear right away, please continually move your mouse cursor. These movements generate entropy which is used to create random data.\n"
 
     seeds = 0
     while seeds < n:
