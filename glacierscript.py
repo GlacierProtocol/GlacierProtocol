@@ -713,7 +713,7 @@ def withdraw_interactive():
         print "\nIs this data correct?"
         print "*** WARNING: Incorrect data may lead to loss of funds ***"
 
-        print "{0} BTC in unspent funds".format(input_amount)
+        print "{0} BTC in unspent supplied transactions".format(input_amount)
         for address, value in addresses.iteritems():
             if address == source_address:
                 print "{0} BTC going back to cold storage address {1}".format(value, address)
