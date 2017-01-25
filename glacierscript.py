@@ -746,7 +746,7 @@ def withdraw_interactive():
     print "\nSigned raw transaction (hex):"
     print signed_tx["hex"]
 
-    print "\nTransaction checksum (md5):"
+    print "\nTransaction fingerprint (md5):"
     print hash_md5(signed_tx["hex"])
 
     write_and_verify_qr_code("transaction", "transaction.png", signed_tx["hex"])
