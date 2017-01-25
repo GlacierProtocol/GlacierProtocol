@@ -706,7 +706,7 @@ def withdraw_interactive():
         if change_amount > 0:
             print "{0} being returned to cold storage address address {1}.".format(change_amount, source_address)
 
-        addresses[dest_address] = str(amount)
+        addresses[dest_address] = str(withdrawal_amount)
         addresses[source_address] = str(change_amount)
 
         # check data
