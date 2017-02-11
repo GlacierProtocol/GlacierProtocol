@@ -125,7 +125,7 @@ def read_rng_seed_interactive(min_length):
     char_length = min_length * 2
 
     def ask_for_rng_seed(length):
-        print "Enter at least {0} characters of computer entropy:".format(length)
+        print "Enter at least {0} characters of computer entropy. Spaces are OK, and will be ignored:".format(length)
 
     ask_for_rng_seed(char_length)
     seed = raw_input()
@@ -174,7 +174,7 @@ def read_dice_seed_interactive(min_length):
     """
 
     def ask_for_dice_seed(x):
-        print "Enter {0} dice rolls (example: 62543163251...):".format(x)
+        print "Enter {0} dice rolls (example: 62543 16325 21341...) Spaces are OK, and will be ignored:".format(x)
 
     ask_for_dice_seed(min_length)
     dice = raw_input()
@@ -197,7 +197,9 @@ def read_dice_seed_interactive(min_length):
 def xor_hex_strings(str1, str2):
     """
     Return xor of two hex strings.
-    An XOR of two pieces of data will be as random as the input with the most random
+    An XOR of two pieces of data will be as random as the input with the most randomness.
+    We can thus combine two entropy sources in this way as a safeguard against one source being
+    compromised in some way.
     For details, see http://crypto.stackexchange.com/a/17660
 
     returns => <string> in hex format
@@ -400,8 +402,8 @@ def get_fee_interactive(source_address, keys, destinations, redeem_script, input
     while not approve:
 
         if not fee_basis_satoshis_per_byte:
-            print "Enter fee rate."
-            fee_basis_satoshis_per_byte = int(raw_input("Satoshis per byte:"))
+            print "\nEnter fee rate."
+            fee_basis_satoshis_per_byte = int(raw_input("Satoshis per byte: "))
 
         unsigned_tx = create_unsigned_transaction(
             source_address, destinations, redeem_script, input_txs)
@@ -564,7 +566,7 @@ def deposit_interactive(m, n, dice_seed_length=62, rng_seed_length=20):
 
     while len(keys) < n:
         index = len(keys) + 1
-        print "Creating private key #{}".format(index)
+        print "\nCreating private key #{}".format(index)
 
         dice_seed_string = read_dice_seed_interactive(dice_seed_length)
         dice_seed_hash = hash_sha256(dice_seed_string)
@@ -633,7 +635,7 @@ def withdraw_interactive():
         source_address = raw_input("\nSource cold storage address: ")
         addresses[source_address] = 0
 
-        redeem_script = raw_input("Redemption script for cold storage address: ")
+        redeem_script = raw_input("\nRedemption script for source cold storage address: ")
 
         dest_address = raw_input("\nDestination address: ")
         addresses[dest_address] = 0
@@ -664,12 +666,12 @@ def withdraw_interactive():
 
             print "TOTAL unspent amount for this raw transaction: {} BTC".format(utxo_sum)
 
-        print "How many private keys will you be signing this transaction with? "
+        print "\nHow many private keys will you be signing this transaction with? "
         key_count = int(raw_input("#: "))
 
         keys = []
         while len(keys) < key_count:
-            key = raw_input("key #{0}: ".format(len(keys) + 1))
+            key = raw_input("Key #{0}: ".format(len(keys) + 1))
             keys.append(key)
 
         ###### fees, amount, and change #######
@@ -685,9 +687,9 @@ def withdraw_interactive():
         print "\nPlease enter the decimal amount (in bitcoin) to withdraw to the destination address."
         print "\nExample: For 2.3 bitcoins, enter \"2.3\"."
         print "\nAfter a fee of {0}, you have {1} bitcoins available to withdraw.".format(fee, input_amount - fee)
-        print "\n*** All bitcoins not withdrawn or paid as a fee will remain in the cold storage address (i.e. will be returned to the source address as a change transaction). ***\n"
+        print "\n*** Technical note for experienced Bitcoin users:  If the withdrawal amount & fee are cumulatively less than the total amount of the unspent transactions, the remainder will be sent back to the same cold storage address as change. ***\n"
         withdrawal_amount = raw_input(
-            "Amount to send to {0} (leave blank for all): ".format(dest_address))
+            "Amount to send to {0} (leave blank to withdraw all funds stored in these unspent transactions): ".format(dest_address))
         if withdrawal_amount == "":
             withdrawal_amount = input_amount - fee
         else:
@@ -711,7 +713,7 @@ def withdraw_interactive():
 
         # check data
         print "\nIs this data correct?"
-        print "*** WARNING: Incorrect data may lead to loss of funds ***"
+        print "*** WARNING: Incorrect data may lead to loss of funds ***\n"
 
         print "{0} BTC in unspent supplied transactions".format(input_amount)
         for address, value in addresses.iteritems():
@@ -720,10 +722,11 @@ def withdraw_interactive():
             else:
                 print "{0} BTC going to destination address {1}".format(value, address)
         print "Fee amount: {0}".format(fee)
-        print "Signing with private keys: "
+        print "\nSigning with private keys: "
         for key in keys:
             print "{}".format(key)
 
+        print "\n"
         confirm = yes_no_interactive()
 
         if confirm:
@@ -743,7 +746,7 @@ def withdraw_interactive():
     print "\nSufficient private keys to execute transaction?"
     print signed_tx["complete"]
 
-    print "\nSigned raw transaction (hex):"
+    print "\nRaw signed transaction (hex):"
     print signed_tx["hex"]
 
     print "\nTransaction fingerprint (md5):"
