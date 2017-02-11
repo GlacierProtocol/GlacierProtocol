@@ -1,3 +1,3 @@
-# Glacier Protocol
-A protocol for high-security cold storage of bitcoins.
-[http://www.glacierprotocol.org](http://www.glacierprotocol.org)
+# Glacier
+Glacier is a protocol for secure cold storage of bitcoins.
+[https://www.glacierprotocol.org](https://www.glacierprotocol.org)
