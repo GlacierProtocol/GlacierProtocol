@@ -26,6 +26,7 @@
 # standard Python libraries
 import time
 import argparse
+import os
 import sys
 import hashlib
 from hashlib import sha256, md5
@@ -647,8 +648,15 @@ def withdraw_interactive():
         utxo_sum = Decimal(0).quantize(SATOSHI_PLACES)
 
         while len(txs) < num_tx:
-            print "\nPlease provide raw transaction #{} (hexadecimal format) with unspent outputs at the source address:".format(len(txs) + 1)
+            print "\nPlease paste raw transaction #{} (hexadecimal format) with unspent outputs at the source address".format(len(txs) + 1)
+            print "OR"
+            print "input a filename located in the current directory which contains the raw transaction data"
+            print "(If the transaction data is over ~4000 characters long, you _must_ use a file.):"
+
             hex_tx = raw_input()
+            if os.path.isfile(hex_tx):
+                hex_tx = open(hex_tx).read().strip()
+
             tx = json.loads(subprocess.check_output(
                 "bitcoin-cli decoderawtransaction {0}".format(hex_tx), shell=True))
             txs.append(tx)
