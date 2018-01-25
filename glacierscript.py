@@ -298,6 +298,9 @@ def get_utxos(tx, address):
     utxos = []
 
     for output in tx["vout"]:
+        if "addresses" not in output["scriptPubKey"]:
+            # In Bitcoin Core versions older than v0.16, native segwit outputs have no address decoded
+            continue
         out_addresses = output["scriptPubKey"]["addresses"]
         amount_btc = output["value"]
         if address in out_addresses:
