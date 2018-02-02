@@ -256,7 +256,7 @@ def ensure_bitcoind_running():
     times = 0
     while times <= 10:
         times += 1
-        if subprocess.call("bitcoin-cli getinfo", shell=True, stdout=devnull, stderr=devnull) == 0:
+        if subprocess.call("bitcoin-cli getnetworkinfo", shell=True, stdout=devnull, stderr=devnull) == 0:
             return
         time.sleep(0.5)
 
