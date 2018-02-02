@@ -249,7 +249,7 @@ def ensure_bitcoind_running():
     # message (to /dev/null) and exit.
     #
     # -connect=0.0.0.0 because we're doing local operations only (and have no network connection anyway)
-    subprocess.call("bitcoind -daemon -connect=0.0.0.0",
+    subprocess.call("bitcoind -deprecatedrpc=createmultisig -daemon -connect=0.0.0.0",
                     shell=True, stdout=devnull, stderr=devnull)
 
     # verify bitcoind started up and is functioning correctly
