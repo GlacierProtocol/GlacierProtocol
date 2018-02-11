@@ -1,0 +1,75 @@
+Are you running this on a computer WITHOUT a network connection of any kind? (y/n)?Have the wireless cards in this computer been physically removed? (y/n)?Are you running on battery power? (y/n)?Are you running on an operating system booted from a USB drive? (y/n)?Is your screen hidden from view of windows, cameras, and other people? (y/n)?Are smartphones and all other nearby devices turned off and in a Faraday bag? (y/n)?
+You will need to enter several pieces of information to create a withdrawal transaction.
+
+
+*** PLEASE BE SURE TO ENTER THE CORRECT DESTINATION ADDRESS ***
+
+
+Source cold storage address: 
+Redemption script for source cold storage address: 
+Destination address: 
+How many unspent transactions will you be using for this withdrawal? 
+Please paste raw transaction #1 (hexadecimal format) with unspent outputs at the source address
+OR
+input a filename located in the current directory which contains the raw transaction data
+(If the transaction data is over ~4000 characters long, you _must_ use a file.):
+
+Please paste raw transaction #2 (hexadecimal format) with unspent outputs at the source address
+OR
+input a filename located in the current directory which contains the raw transaction data
+(If the transaction data is over ~4000 characters long, you _must_ use a file.):
+
+Please paste raw transaction #3 (hexadecimal format) with unspent outputs at the source address
+OR
+input a filename located in the current directory which contains the raw transaction data
+(If the transaction data is over ~4000 characters long, you _must_ use a file.):
+
+Please paste raw transaction #4 (hexadecimal format) with unspent outputs at the source address
+OR
+input a filename located in the current directory which contains the raw transaction data
+(If the transaction data is over ~4000 characters long, you _must_ use a file.):
+
+Transaction data found for source address.
+TOTAL unspent amount for this raw transaction: 1.69999151 BTC
+
+How many private keys will you be signing this transaction with? 
+#: Key #1: Key #2: 
+Enter fee rate.
+Satoshis per byte: 
+Based on the provided rate, the fee will be 0.00001394 bitcoin.
+Confirm? (y/n): 
+Please enter the decimal amount (in bitcoin) to withdraw to the destination address.
+
+Example: For 2.3 bitcoins, enter "2.3".
+
+After a fee of 0.00001394, you have 1.69997757 bitcoins available to withdraw.
+
+*** Technical note for experienced Bitcoin users:  If the withdrawal amount & fee are cumulatively less than the total amount of the unspent transactions, the remainder will be sent back to the same cold storage address as change. ***
+
+Amount to send to 2N5PvoFj6adLPcqHAD24MxEZxvdQMGBLXow (leave blank to withdraw all funds stored in these unspent transactions): 
+Is this data correct?
+*** WARNING: Incorrect data may lead to loss of funds ***
+
+1.69999151 BTC in unspent supplied transactions
+1.69997757 BTC going to destination address 2N5PvoFj6adLPcqHAD24MxEZxvdQMGBLXow
+0 BTC going back to cold storage address 2NAVkgszAvjZZwWpHpbCaxSaNqCCXPD8Bts
+Fee amount: 0.00001394
+
+Signing with private keys: 
+cQCrT9Ncs9729ao7jbmAWrD9z7tF64s2yKzmD6nkiLAi9sXVZWAn
+cP65UeSDZPiTLB6CBwasWv9oJYEjRgQXhswfwcT9HscEKDcEbgy4
+
+
+Confirm? (y/n): 
+Calculating transaction...
+
+
+Sufficient private keys to execute transaction?
+True
+
+Raw signed transaction (hex):
+020000000448121218e5e85b910bdfb12be923b84e5bd1b7bda6dfdf188762b415695cc97501000000fd1f0100483045022100c6967e67f5c88bb8c9b2e17e8acc1a2438d1f7e050d7841f5c2b6c3dfe22036902203184d840c11a455182b15a75f5451b1e822951c1b901aa82962d2a4f4cd84a070147304402207009c4b7dbc9a2dc64df3e8e7f2edd4c0c14218d20b504ae41718eea1a76ad28022021d783018c8a3fd08a373c028357bcff38dac9baa0f8f13acc0cdaa1394e9158014c8b522103d14ddcfb6817f5579695bbb3eb3e185887bf2942b031e6f716343b8fe7e9e8e221028fcd46f8614b2cbf318096968242a1e22bcfb6d8f2b6dc939c8c27c347b2937b210315acb550120f4cdcb460d5c49080ab508ca4ccd8dedecac22feeac8cd017d4c121022b063ee2f22f9e1982c140fe778672c683111a796dcccdbd47bb65e3d608a98354aeffffffffdf1e32efe8b3222707f4d796fcf2a282195642a1e9da8fd0e510113acc97cc9200000000fd1f01004830450221008553ac8b7509260daa07f50aea405ae2c2e580c92fb518b54ae83cb4d73a77870220276e18153f26abc562be904abe2a5bc9443018270c6591061583a0c7341bafe10147304402200a232b46a642d5b6f02eea08a21ebe41dec707b2d1a9572c55d347377fe1695b02204c6932e3eb299a07334f632faa4ec55398e47f13a396e3daec665148dcbb5bcb014c8b522103d14ddcfb6817f5579695bbb3eb3e185887bf2942b031e6f716343b8fe7e9e8e221028fcd46f8614b2cbf318096968242a1e22bcfb6d8f2b6dc939c8c27c347b2937b210315acb550120f4cdcb460d5c49080ab508ca4ccd8dedecac22feeac8cd017d4c121022b063ee2f22f9e1982c140fe778672c683111a796dcccdbd47bb65e3d608a98354aeffffffffbf710bfffa3c2faba4b1f4e366ae12de6ff6ecc21d4b2aed36bd78aa3e1dc8a600000000fd1f010048304502210095e478f7ee48ccbfeda9198fe6959815a212b694d0e5caa38892ca20a336dda802201e90f4294f63833a4ae7a21a1ec064c5b63abf4758da9be30a016a556808906f014730440220266cff5fe1728f4a98ffec98e49612d652a9f0f70f66156ad141c6eca0d15caa02207737e079f93cdad07ff5495b70e572ccc7922c6b19627bfed59e72a174798a9b014c8b522103d14ddcfb6817f5579695bbb3eb3e185887bf2942b031e6f716343b8fe7e9e8e221028fcd46f8614b2cbf318096968242a1e22bcfb6d8f2b6dc939c8c27c347b2937b210315acb550120f4cdcb460d5c49080ab508ca4ccd8dedecac22feeac8cd017d4c121022b063ee2f22f9e1982c140fe778672c683111a796dcccdbd47bb65e3d608a98354aeffffffffa2bfdfe27c66b657352f963931a6587f7d453a2e05cfe2633e5a3e43a4a8986400000000fd200100483045022100a727ba9240cd2ba35cc5d00d11f030cab62c39855e665b39f6afa62bfdc5181c022048e42e8c2ab0f20c3caa8d1a5fb5409863eec29f6ce00e87633c2e6165065fa7014830450221008c493ff4ce33fe19fbf75737b0094dcccf044d272bc3379285518948aabe94120220387d3a8853c7a5fa2ffc864c855946a5b76bd0f8fc2de6c7a4953a1c57fc74ac014c8b522103d14ddcfb6817f5579695bbb3eb3e185887bf2942b031e6f716343b8fe7e9e8e221028fcd46f8614b2cbf318096968242a1e22bcfb6d8f2b6dc939c8c27c347b2937b210315acb550120f4cdcb460d5c49080ab508ca4ccd8dedecac22feeac8cd017d4c121022b063ee2f22f9e1982c140fe778672c683111a796dcccdbd47bb65e3d608a98354aeffffffff01bdf5210a0000000017a9148546e747c8094376b0a0af44bc5bbb8dd4f0218d8700000000
+
+Transaction fingerprint (md5):
+9253e46cc0dc1f2712c7a039d6e36843
+QR code for transaction written to transaction.png
