@@ -262,6 +262,17 @@ def ensure_bitcoind_running():
 
     raise Exception("Timeout while starting bitcoin server")
 
+def require_minimum_bitcoind_version(min_version):
+    """
+    Fail if the bitcoind version in use is older than required
+    <min_version> - required minimum version in format of getnetworkinfo, i.e. 150100 for v0.15.1
+    """
+    networkinfo_str = subprocess.check_output(bitcoin_cli + "getnetworkinfo", shell=True)
+    networkinfo = json.loads(networkinfo_str)
+
+    if int(networkinfo["version"]) < min_version:
+        print "ERROR: Your bitcoind version is too old. Exiting..."
+        sys.exit()
 
 def get_address_for_wif_privkey(privkey):
     """A method for retrieving the address associated with a private key from bitcoin core
@@ -560,6 +571,7 @@ def deposit_interactive(m, n, dice_seed_length=62, rng_seed_length=20):
 
     safety_checklist()
     ensure_bitcoind_running()
+    require_minimum_bitcoind_version(160000) # addmultisigaddress API changed in v0.16.0
 
     print "\n"
     print "Creating {0}-of-{1} cold storage address.\n".format(m, n)
