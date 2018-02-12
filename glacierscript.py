@@ -590,9 +590,9 @@ def deposit_interactive(m, n, dice_seed_length=62, rng_seed_length=20):
     # line below is unneeded now, right?
     # label = random.randint(0, 2**128)
 
-    argstring = "{0} '{1}'".format(m, address_string)
+    argstring = "{0} '{1}' '' 'legacy'".format(m, address_string)
     results = subprocess.check_output(
-        bitcoin_cli + "createmultisig {0}".format(argstring), shell=True)
+        bitcoin_cli + "addmultisigaddress {0}".format(argstring), shell=True)
     results = json.loads(results)
 
     print "Private keys:"
