@@ -370,7 +370,7 @@ def sign_transaction(source_address, keys, redeem_script, unsigned_hex, input_tx
     input_txs: List<dict> A list of input transactions to use (bitcoind decoded format)
     """
 
-    # For each UTXO used as input, we need the txid, vout index, scriptPubKey, and redeemScript
+    # For each UTXO used as input, we need the txid, vout index, scriptPubKey, amount, and redeemScript
     # to generate a signature
     inputs = []
     for tx in input_txs:
@@ -380,6 +380,7 @@ def sign_transaction(source_address, keys, redeem_script, unsigned_hex, input_tx
             inputs.append({
                 "txid": txid,
                 "vout": int(utxo["n"]),
+                "amount": utxo["value"],
                 "scriptPubKey": utxo["scriptPubKey"]["hex"],
                 "redeemScript": redeem_script
             })
