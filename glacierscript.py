@@ -298,7 +298,7 @@ def get_address_for_wif_privkey(privkey):
     return addresses_json[0]
 
 
-def addmultisigaddress(m, addresses_or_pubkeys, address_type='legacy'):
+def addmultisigaddress(m, addresses_or_pubkeys, address_type='p2sh-segwit'):
     """
     Call `bitcoin-cli addmultisigaddress`
     returns => JSON response from bitcoin-cli
@@ -412,7 +412,10 @@ def teach_address_to_wallet(source_address, redeem_script, keys):
         bitcoin_cli + "decodescript {0}".format(redeem_script), shell=True))
     pubkeys = find_pubkeys_in_script(decoded_script)
     reqsigs = decoded_script["reqSigs"]
-    addmulti_results = addmultisigaddress(reqsigs, pubkeys)
+    # Teach it about both p2sh and p2wsh-in-p2sh addresses, so that we can withdraw
+    # from either address
+    legacy_addmulti_results = addmultisigaddress(reqsigs, pubkeys, address_type='legacy')
+    segwit_addmulti_results = addmultisigaddress(reqsigs, pubkeys, address_type='p2sh-segwit')
 
 def sign_transaction(source_address, keys, redeem_script, unsigned_hex, input_txs):
     """

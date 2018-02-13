@@ -1,0 +1,61 @@
+Are you running this on a computer WITHOUT a network connection of any kind? (y/n)?Have the wireless cards in this computer been physically removed? (y/n)?Are you running on battery power? (y/n)?Are you running on an operating system booted from a USB drive? (y/n)?Is your screen hidden from view of windows, cameras, and other people? (y/n)?Are smartphones and all other nearby devices turned off and in a Faraday bag? (y/n)?
+You will need to enter several pieces of information to create a withdrawal transaction.
+
+
+*** PLEASE BE SURE TO ENTER THE CORRECT DESTINATION ADDRESS ***
+
+
+Source cold storage address: 
+Redemption script for source cold storage address: 
+Destination address: 
+How many unspent transactions will you be using for this withdrawal? 
+Please paste raw transaction #1 (hexadecimal format) with unspent outputs at the source address
+OR
+input a filename located in the current directory which contains the raw transaction data
+(If the transaction data is over ~4000 characters long, you _must_ use a file.):
+
+Transaction data found for source address.
+TOTAL unspent amount for this raw transaction: 0.10000000 BTC
+
+How many private keys will you be signing this transaction with? 
+#: Key #1: Key #2: 
+Enter fee rate.
+Satoshis per byte: 
+Based on the provided rate, the fee will be 0.00004420 bitcoin.
+Confirm? (y/n): 
+Please enter the decimal amount (in bitcoin) to withdraw to the destination address.
+
+Example: For 2.3 bitcoins, enter "2.3".
+
+After a fee of 0.00004420, you have 0.09995580 bitcoins available to withdraw.
+
+*** Technical note for experienced Bitcoin users:  If the withdrawal amount & fee are cumulatively less than the total amount of the unspent transactions, the remainder will be sent back to the same cold storage address as change. ***
+
+Amount to send to myP4xdJNwAW9iMakvCjnozg814ewgn8apd (leave blank to withdraw all funds stored in these unspent transactions): 0.06995580 being returned to cold storage address address 2N93du8YobdgsHyu3qgBvSyhGUT52utMNeA.
+
+Is this data correct?
+*** WARNING: Incorrect data may lead to loss of funds ***
+
+0.10000000 BTC in unspent supplied transactions
+0.06995580 BTC going back to cold storage address 2N93du8YobdgsHyu3qgBvSyhGUT52utMNeA
+0.03000000 BTC going to destination address myP4xdJNwAW9iMakvCjnozg814ewgn8apd
+Fee amount: 0.00004420
+
+Signing with private keys: 
+cQCrT9Ncs9729ao7jbmAWrD9z7tF64s2yKzmD6nkiLAi9sXVZWAn
+cP65UeSDZPiTLB6CBwasWv9oJYEjRgQXhswfwcT9HscEKDcEbgy4
+
+
+Confirm? (y/n): 
+Calculating transaction...
+
+
+Sufficient private keys to execute transaction?
+True
+
+Raw signed transaction (hex):
+020000000001015701865854493f0cb97b07ccf231003150433c74abc8cdac4c3c87fb25bbe9e0010000002322002065c863c750331cc03efb4daca217e7925cff87f5e9ca9927564234be0d6278e8ffffffff027cbe6a000000000017a914ad50fb2489353008e75b0193011ff1f4b76f798c87c0c62d00000000001976a914c3f4800772d58f5429dcb550b1a6a53580175bc188ac040047304402203c435f1ac8e51c5c612402c9276f5845beccabc1f7da6460d549d760f7f7f985022068fa17a6301cc2156537ce9d66da9ba76e0c1de87db4fc5a917e7cb1a49db58b01483045022100d2f58aaa6101e27dba305d4c7a7698edbc87a52b5aa419abfc1be09ddb1d167002205d7a9a031657a2f12ec1938c062f1ed4ebba1609f7ee1e53f51c4490e5d72963018b522103d14ddcfb6817f5579695bbb3eb3e185887bf2942b031e6f716343b8fe7e9e8e221028fcd46f8614b2cbf318096968242a1e22bcfb6d8f2b6dc939c8c27c347b2937b210315acb550120f4cdcb460d5c49080ab508ca4ccd8dedecac22feeac8cd017d4c121022b063ee2f22f9e1982c140fe778672c683111a796dcccdbd47bb65e3d608a98354ae00000000
+
+Transaction fingerprint (md5):
+2d576bec2a14dece3b287308bdbfc496
+QR code for transaction written to transaction.png
