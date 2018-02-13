@@ -298,6 +298,21 @@ def get_address_for_wif_privkey(privkey):
     return addresses_json[0]
 
 
+def addmultisigaddress(m, addresses_or_pubkeys):
+    """
+    Call `bitcoin-cli addmultisigaddress`
+    returns => JSON response from bitcoin-cli
+
+    m: <int> number of multisig keys required for withdrawal
+    addresses_or_pubkeys: List<string> either addresses or hex pubkeys for each of the N keys
+    """
+
+    address_string = json.dumps(addresses_or_pubkeys)
+    argstring = "{0} '{1}' '' 'legacy'".format(m, address_string)
+    results = subprocess.check_output(
+        bitcoin_cli + "addmultisigaddress {0}".format(argstring), shell=True)
+    return json.loads(results)
+
 def get_utxos(tx, address):
     """ 
     Given a transaction, find all the outputs that were sent to an address
@@ -599,14 +614,7 @@ def deposit_interactive(m, n, dice_seed_length=62, rng_seed_length=20):
     print "Generating {0}-of-{1} cold storage address...\n".format(m, n)
 
     addresses = [get_address_for_wif_privkey(key) for key in keys]
-    address_string = json.dumps(addresses)
-    # line below is unneeded now, right?
-    # label = random.randint(0, 2**128)
-
-    argstring = "{0} '{1}' '' 'legacy'".format(m, address_string)
-    results = subprocess.check_output(
-        bitcoin_cli + "addmultisigaddress {0}".format(argstring), shell=True)
-    results = json.loads(results)
+    results = addmultisigaddress(m, addresses)
 
     print "Private keys:"
     for idx, key in enumerate(keys):
