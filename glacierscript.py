@@ -298,7 +298,7 @@ def get_address_for_wif_privkey(privkey):
     return addresses_json[0]
 
 
-def addmultisigaddress(m, addresses_or_pubkeys):
+def addmultisigaddress(m, addresses_or_pubkeys, address_type='legacy'):
     """
     Call `bitcoin-cli addmultisigaddress`
     returns => JSON response from bitcoin-cli
@@ -308,7 +308,7 @@ def addmultisigaddress(m, addresses_or_pubkeys):
     """
 
     address_string = json.dumps(addresses_or_pubkeys)
-    argstring = "{0} '{1}' '' 'legacy'".format(m, address_string)
+    argstring = "{0} '{1}' '' '{2}'".format(m, address_string, address_type)
     return json.loads(subprocess.check_output(
         bitcoin_cli + "addmultisigaddress {0}".format(argstring), shell=True))
 
