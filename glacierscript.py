@@ -309,9 +309,8 @@ def addmultisigaddress(m, addresses_or_pubkeys):
 
     address_string = json.dumps(addresses_or_pubkeys)
     argstring = "{0} '{1}' '' 'legacy'".format(m, address_string)
-    results = subprocess.check_output(
-        bitcoin_cli + "addmultisigaddress {0}".format(argstring), shell=True)
-    return json.loads(results)
+    return json.loads(subprocess.check_output(
+        bitcoin_cli + "addmultisigaddress {0}".format(argstring), shell=True))
 
 def get_utxos(tx, address):
     """ 
