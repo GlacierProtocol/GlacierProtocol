@@ -307,6 +307,7 @@ def addmultisigaddress(m, addresses_or_pubkeys, address_type='p2sh-segwit'):
     addresses_or_pubkeys: List<string> either addresses or hex pubkeys for each of the N keys
     """
 
+    require_minimum_bitcoind_version(160000) # addmultisigaddress API changed in v0.16.0
     address_string = json.dumps(addresses_or_pubkeys)
     argstring = "{0} '{1}' '' '{2}'".format(m, address_string, address_type)
     return json.loads(subprocess.check_output(
@@ -632,7 +633,6 @@ def deposit_interactive(m, n, dice_seed_length=62, rng_seed_length=20):
 
     safety_checklist()
     ensure_bitcoind_running()
-    require_minimum_bitcoind_version(160000) # addmultisigaddress API changed in v0.16.0
 
     print "\n"
     print "Creating {0}-of-{1} cold storage address.\n".format(m, n)
