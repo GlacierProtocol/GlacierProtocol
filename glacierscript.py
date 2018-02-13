@@ -372,6 +372,48 @@ def create_unsigned_transaction(source_address, destinations, redeem_script, inp
     return tx_unsigned_hex
 
 
+def find_pubkeys_in_script(decoded_script):
+    """
+    Find the N pubkeys in the provided redeem script
+    Return => List<string> hex-encoded pubkeys
+
+    decoded_script: <dict> output of `decodescript` run on our redeem script
+    """
+    if decoded_script["type"] != "multisig": # sanity check
+        print "ERROR: Supplied redeem script does not seem to be a valid multisig script, Exiting..."
+        sys.exit()
+    # Example "asm": "2 03d14ddcfb6817f5579695bbb3eb3e185887bf2942b031e6f716343b8fe7e9e8e2 028fcd46f8614b2cbf318096968242a1e22bcfb6d8f2b6dc939c8c27c347b2937b 0315acb550120f4cdcb460d5c49080ab508ca4ccd8dedecac22feeac8cd017d4c1 022b063ee2f22f9e1982c140fe778672c683111a796dcccdbd47bb65e3d608a983 4 OP_CHECKMULTISIG",
+    opcodes = decoded_script["asm"].split()
+    keys = opcodes[1:-2]
+    key_count = int(opcodes[-2])
+    if len(keys) != key_count: # sanity check
+        print "ERROR: Unable to decode supplied redeem script, Exiting..."
+        sys.exit()
+    return keys
+
+def teach_address_to_wallet(source_address, redeem_script, keys):
+    """
+    Teaches the bitcoind wallet about our multisig address, so it can
+    use that knowledge to sign the transaction we're about to create.
+
+    source_address: <string> multisig address
+    redeem_script: <string>
+    keys: List<string> The private keys you wish to sign with
+    """
+
+    # First teach the wallet about each of our privkeys
+    for key in keys:
+        subprocess.check_call(bitcoin_cli + "importprivkey {0}".format(key), shell=True)
+
+    # Rather ugly: see https://github.com/bitcoin/bitcoin/issues/12418
+    # I have to decode the redeem_script to find the pubkeys, then use those pubkeys
+    # to recreate the multisig address in the wallet.
+    decoded_script = json.loads(subprocess.check_output(
+        bitcoin_cli + "decodescript {0}".format(redeem_script), shell=True))
+    pubkeys = find_pubkeys_in_script(decoded_script)
+    reqsigs = decoded_script["reqSigs"]
+    addmulti_results = addmultisigaddress(reqsigs, pubkeys)
+
 def sign_transaction(source_address, keys, redeem_script, unsigned_hex, input_txs):
     """
     Creates a signed transaction
@@ -399,8 +441,9 @@ def sign_transaction(source_address, keys, redeem_script, unsigned_hex, input_tx
                 "redeemScript": redeem_script
             })
 
-    argstring_2 = "{0} '{1}' '{2}'".format(
-        unsigned_hex, json.dumps(inputs), json.dumps(keys))
+    teach_address_to_wallet(source_address, redeem_script, keys)
+    argstring_2 = "{0} '{1}'".format(
+        unsigned_hex, json.dumps(inputs))
     signed_hex = subprocess.check_output(
         bitcoin_cli + "signrawtransaction {0}".format(argstring_2), shell=True).strip()
 
