@@ -478,7 +478,7 @@ def get_fee_interactive(source_address, keys, destinations, redeem_script, input
     approve = False
     while not approve:
         print "\nEnter fee rate."
-        fee_basis_satoshis_per_byte = int(raw_input("Satoshis per byte: "))
+        fee_basis_satoshis_per_byte = int(raw_input("Satoshis per vbyte: "))
 
         unsigned_tx = create_unsigned_transaction(
             source_address, destinations, redeem_script, input_txs)

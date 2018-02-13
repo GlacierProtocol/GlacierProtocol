@@ -20,10 +20,10 @@ TOTAL unspent amount for this raw transaction: 0.00050000 BTC
 How many private keys will you be signing this transaction with? 
 #: Key #1: Key #2: 
 Enter fee rate.
-Satoshis per byte: Calculated fee (0.05360000) is too high. Must be under 0.005
+Satoshis per vbyte: Calculated fee (0.05360000) is too high. Must be under 0.005
 
 Enter fee rate.
-Satoshis per byte: 
+Satoshis per vbyte: 
 Based on the provided rate, the fee will be 0.00005360 bitcoin.
 Confirm? (y/n): 
 Please enter the decimal amount (in bitcoin) to withdraw to the destination address.
