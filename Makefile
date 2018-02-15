@@ -1,5 +1,18 @@
 # Only for running tests. Nothing else to make.
 
+## Running tests:
+# $ make                              -- Runs all tests
+# $ make t/create-deposit-data.test   -- Runs a single test. Note there is no actual file by this name
+#
+## Writing tests:
+# Create a t/foo.run bash script; make sure it is chmod +x.
+# Create a matching t/foo.golden file; `touch t/foo.golden` is sufficient to start
+# Run the test using `make t/foo.test`; it will fail since it doesn't match golden
+# Manually check t/foo.out to ensure desired output
+# $ mv t/foo.{out,golden}
+# Ensure test passes now
+# Commit!
+
 SHELL := /bin/bash
 
 all-tests := $(addsuffix .test, $(basename $(wildcard t/*.run)))
