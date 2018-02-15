@@ -254,7 +254,7 @@ def ensure_bitcoind_running():
 
     # verify bitcoind started up and is functioning correctly
     times = 0
-    while times <= 10:
+    while times <= 20:
         times += 1
         if subprocess.call(bitcoin_cli + "getnetworkinfo", shell=True, stdout=devnull, stderr=devnull) == 0:
             return
