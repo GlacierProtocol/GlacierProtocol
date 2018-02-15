@@ -9,7 +9,7 @@ set -e
 # 4. Electrum native p2wpkh with no change
 
 
-../../glacierscript.py --testnet create-withdrawal-data << INPUT
+../../glacierscript.py --testnet=$1 create-withdrawal-data << INPUT
 y
 y
 y

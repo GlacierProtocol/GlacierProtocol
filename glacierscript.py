@@ -787,12 +787,12 @@ if __name__ == "__main__":
         "-m", type=int, help="Number of signing keys required in an m-of-n multisig address creation (default m-of-n = 1-of-2)", default=1)
     parser.add_argument(
         "-n", type=int, help="Number of total keys required in an m-of-n multisig address creation (default m-of-n = 1-of-2)", default=2)
-    parser.add_argument('--testnet', action='store_true', help=argparse.SUPPRESS)
+    parser.add_argument('--testnet', type=int, help=argparse.SUPPRESS)
     args = parser.parse_args()
 
 
     global bitcoind, bitcoin_cli, wif_prefix
-    cli_args = "-testnet -datadir=bitcoin-test-data " if args.testnet else ""
+    cli_args = "-testnet -rpcport={} -datadir=bitcoin-test-data ".format(args.testnet) if args.testnet else ""
     wif_prefix = "EF" if args.testnet else "80"
     bitcoind = "bitcoind " + cli_args
     bitcoin_cli = "bitcoin-cli " + cli_args
