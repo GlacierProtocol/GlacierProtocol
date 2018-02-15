@@ -43,6 +43,9 @@ define cleanup_bitcoind =
 @mkdir -p $(RUNDIR)/bitcoin-test-data
 @bitcoin-cli -testnet -rpcport=$(compteur) -datadir=$(RUNDIR)/bitcoin-test-data stop >/dev/null 2>&1 || exit 0
 @if pgrep --full "^bitcoind -testnet -rpcport=$(compteur)" >/dev/null; then sleep 1; fi
+@if pgrep --full "^bitcoind -testnet -rpcport=$(compteur)" >/dev/null; then sleep 1; fi
+@if pgrep --full "^bitcoind -testnet -rpcport=$(compteur)" >/dev/null; then sleep 1; fi
+@if pgrep --full "^bitcoind -testnet -rpcport=$(compteur)" >/dev/null; then sleep 1; fi
 @if pgrep --full "^bitcoind -testnet -rpcport=$(compteur)" >/dev/null; then echo Error: unable to stop bitcoind on port $(compteur); exit 1; fi
 @rm -rf $(RUNDIR)/bitcoin-test-data
 endef
