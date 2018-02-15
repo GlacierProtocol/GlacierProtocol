@@ -18,6 +18,3 @@ fef9 2028 855b 852a 1476 5053 29d0 45a6 76b6 187b
 a90f efb6 7096 3e3d 7973 f4c0 6be8 8791 909c 9f92
 
 INPUT
-
-# Cleanup cruft
-rm address.png redemption.png

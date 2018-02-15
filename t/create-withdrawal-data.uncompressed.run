@@ -21,6 +21,3 @@ y
 0.00004000
 y
 INPUT
-
-# Cleanup cruft
-rm transaction.png
