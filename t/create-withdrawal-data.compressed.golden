@@ -21,6 +21,12 @@ How many private keys will you be signing this transaction with?
 #: Key #1: Key #2: 
 Enter fee rate.
 Satoshis per byte: 
+Based on the provided rate, the fee will be 0.00000405 bitcoin.
+Confirm? (y/n): 
+Fee calculation aborted. Starting over...
+
+Enter fee rate.
+Satoshis per byte: 
 Based on the provided rate, the fee will be 0.00004050 bitcoin.
 Confirm? (y/n): 
 Please enter the decimal amount (in bitcoin) to withdraw to the destination address.
