@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+# Also tests excessive fee correction
+
 ../../glacierscript.py --testnet=$1 create-withdrawal-data << INPUT
 y
 y
@@ -16,6 +18,7 @@ n4S1Q6S9b5dq72ttpnFZXwaPCs2Z8ojwPR
 2
 92jodMpEwGtS11sMjxfq6acnc1Yi6VX2QFZWr4YQVjXnQGdKH1g
 922F7weRdtBgCnqcnuMo8hba8wj75fZc2nx4oTnLHevh9GaCVXA
+10000
 10
 y
 0.00004000
