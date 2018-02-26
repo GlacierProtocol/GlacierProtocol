@@ -379,7 +379,7 @@ def sign_transaction(source_address, keys, redeem_script, unsigned_hex, input_tx
     return signed_tx
 
 
-def get_fee_interactive(source_address, keys, destinations, redeem_script, input_txs, fee_basis_satoshis_per_byte=None):
+def get_fee_interactive(source_address, keys, destinations, redeem_script, input_txs):
     """ 
     Returns a recommended transaction fee, given market fee data provided by the user interactively
     Because fees tend to be a function of transaction size, we build the transaction in order to 
@@ -401,10 +401,8 @@ def get_fee_interactive(source_address, keys, destinations, redeem_script, input
 
     approve = False
     while not approve:
-
-        if not fee_basis_satoshis_per_byte:
-            print "\nEnter fee rate."
-            fee_basis_satoshis_per_byte = int(raw_input("Satoshis per byte: "))
+        print "\nEnter fee rate."
+        fee_basis_satoshis_per_byte = int(raw_input("Satoshis per byte: "))
 
         unsigned_tx = create_unsigned_transaction(
             source_address, destinations, redeem_script, input_txs)
@@ -418,7 +416,7 @@ def get_fee_interactive(source_address, keys, destinations, redeem_script, input
         fee = satoshi_to_btc(fee)
 
         if fee > MAX_FEE:
-            print "Calculated fee is too high. Must be under {}".format(MAX_FEE)
+            print "Calculated fee ({}) is too high. Must be under {}".format(fee, MAX_FEE)
         else:
             print "\nBased on the provided rate, the fee will be {} bitcoin.".format(fee)
             confirm = yes_no_interactive()
