@@ -221,7 +221,7 @@ def hex_private_key_to_WIF_private_key(hex_key):
     returns => <string> in hex format
     """
 
-    hex_key_with_prefix = "80" + hex_key
+    hex_key_with_prefix = "80" + hex_key + "01"
 
     h1 = hash_sha256(hex_key_with_prefix.decode("hex"))
     h2 = hash_sha256(h1.decode("hex"))
