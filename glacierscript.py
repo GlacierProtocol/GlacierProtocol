@@ -221,7 +221,7 @@ def hex_private_key_to_WIF_private_key(hex_key):
     returns => <string> in hex format
     """
 
-    hex_key_with_prefix = "80" + hex_key + "01"
+    hex_key_with_prefix = wif_prefix + hex_key + "01"
 
     h1 = hash_sha256(hex_key_with_prefix.decode("hex"))
     h2 = hash_sha256(h1.decode("hex"))
@@ -249,14 +249,14 @@ def ensure_bitcoind_running():
     # message (to /dev/null) and exit.
     #
     # -connect=0.0.0.0 because we're doing local operations only (and have no network connection anyway)
-    subprocess.call("bitcoind -deprecatedrpc=createmultisig -daemon -connect=0.0.0.0",
+    subprocess.call(bitcoind + "-deprecatedrpc=createmultisig -daemon -connect=0.0.0.0",
                     shell=True, stdout=devnull, stderr=devnull)
 
     # verify bitcoind started up and is functioning correctly
     times = 0
-    while times <= 10:
+    while times <= 20:
         times += 1
-        if subprocess.call("bitcoin-cli getnetworkinfo", shell=True, stdout=devnull, stderr=devnull) == 0:
+        if subprocess.call(bitcoin_cli + "getnetworkinfo", shell=True, stdout=devnull, stderr=devnull) == 0:
             return
         time.sleep(0.5)
 
@@ -278,9 +278,9 @@ def get_address_for_wif_privkey(privkey):
 
     ensure_bitcoind_running()
     subprocess.call(
-        "bitcoin-cli importprivkey {0} {1}".format(privkey, account_number), shell=True)
+        bitcoin_cli + "importprivkey {0} {1}".format(privkey, account_number), shell=True)
     addresses = subprocess.check_output(
-        "bitcoin-cli getaddressesbyaccount {0}".format(account_number), shell=True)
+        bitcoin_cli + "getaddressesbyaccount {0}".format(account_number), shell=True)
 
     # extract address from JSON output
     addresses_json = json.loads(addresses)
@@ -342,7 +342,7 @@ def create_unsigned_transaction(source_address, destinations, redeem_script, inp
         json.dumps(inputs), json.dumps(destinations))
 
     tx_unsigned_hex = subprocess.check_output(
-        "bitcoin-cli createrawtransaction {0}".format(argstring), shell=True).strip()
+        bitcoin_cli + "createrawtransaction {0}".format(argstring), shell=True).strip()
 
     return tx_unsigned_hex
 
@@ -376,7 +376,7 @@ def sign_transaction(source_address, keys, redeem_script, unsigned_hex, input_tx
     argstring_2 = "{0} '{1}' '{2}'".format(
         unsigned_hex, json.dumps(inputs), json.dumps(keys))
     signed_hex = subprocess.check_output(
-        "bitcoin-cli signrawtransaction {0}".format(argstring_2), shell=True).strip()
+        bitcoin_cli + "signrawtransaction {0}".format(argstring_2), shell=True).strip()
 
     signed_tx = json.loads(signed_hex)
     return signed_tx
@@ -592,7 +592,7 @@ def deposit_interactive(m, n, dice_seed_length=62, rng_seed_length=20):
 
     argstring = "{0} '{1}'".format(m, address_string)
     results = subprocess.check_output(
-        "bitcoin-cli createmultisig {0}".format(argstring), shell=True)
+        bitcoin_cli + "createmultisig {0}".format(argstring), shell=True)
     results = json.loads(results)
 
     print "Private keys:"
@@ -659,7 +659,7 @@ def withdraw_interactive():
                 hex_tx = open(hex_tx).read().strip()
 
             tx = json.loads(subprocess.check_output(
-                "bitcoin-cli decoderawtransaction {0}".format(hex_tx), shell=True))
+                bitcoin_cli + "decoderawtransaction {0}".format(hex_tx), shell=True))
             txs.append(tx)
             utxos += get_utxos(tx, source_address)
 
@@ -787,7 +787,15 @@ if __name__ == "__main__":
         "-m", type=int, help="Number of signing keys required in an m-of-n multisig address creation (default m-of-n = 1-of-2)", default=1)
     parser.add_argument(
         "-n", type=int, help="Number of total keys required in an m-of-n multisig address creation (default m-of-n = 1-of-2)", default=2)
+    parser.add_argument('--testnet', type=int, help=argparse.SUPPRESS)
     args = parser.parse_args()
+
+
+    global bitcoind, bitcoin_cli, wif_prefix
+    cli_args = "-testnet -rpcport={} -datadir=bitcoin-test-data ".format(args.testnet) if args.testnet else ""
+    wif_prefix = "EF" if args.testnet else "80"
+    bitcoind = "bitcoind " + cli_args
+    bitcoin_cli = "bitcoin-cli " + cli_args
 
     if args.program == "entropy":
         entropy(args.num_keys, args.rng)
