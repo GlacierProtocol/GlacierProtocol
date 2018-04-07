@@ -17,7 +17,7 @@ SHELL := /bin/bash
 
 all-tests := $(addsuffix .test, $(basename $(wildcard t/*.run)))
 
-.PHONY : test all %.test
+.PHONY : prereqs test all %.test
 
 # Force parallel even when user was too lazy to type -j4
 MAKEFLAGS += --jobs=4
@@ -59,7 +59,7 @@ OUTPUT = $(addsuffix .out, $(basename $<))
 RUNDIR = testrun/$(notdir $@)
 
 
-%.test : %.run %.golden glacierscript.py
+%.test : %.run %.golden glacierscript.py prereqs
 	$(cleanup_bitcoind)
 	@mkdir -p $(RUNDIR)/bitcoin-test-data
 	cd $(RUNDIR) && ../../$< $(compteur) 2>&1 > ../../$(OUTPUT)
@@ -68,3 +68,9 @@ RUNDIR = testrun/$(notdir $@)
 	$(cleanup_bitcoind)
 	@rm -rf $(RUNDIR)
 	@rm $(OUTPUT)
+
+
+prereqs:
+	@which bitcoind > /dev/null || (echo 'Error: unable to find bitcoind'; exit 1)
+	@which zbarimg > /dev/null || (echo 'Error: unable to find zbarimg (from package zbar-tools)'; exit 1)
+	@which qrencode > /dev/null || (echo 'Error: unable to find qrencode'; exit 1)
