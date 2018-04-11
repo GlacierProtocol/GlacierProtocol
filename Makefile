@@ -17,7 +17,7 @@ SHELL := /bin/bash
 
 all-tests := $(addsuffix .test, $(basename $(wildcard t/*.run)))
 
-.PHONY : test all %.test
+.PHONY : prereqs test all %.test
 
 # Force parallel even when user was too lazy to type -j4
 MAKEFLAGS += --jobs=4
@@ -42,11 +42,11 @@ $(foreach t,$(all-tests),$(eval $(call set_compteur, $(t))))
 define cleanup_bitcoind =
 @mkdir -p $(RUNDIR)/bitcoin-test-data
 @bitcoin-cli -testnet -rpcport=$(compteur) -datadir=$(RUNDIR)/bitcoin-test-data stop >/dev/null 2>&1 || exit 0
-@if pgrep --full "^bitcoind -testnet -rpcport=$(compteur)" >/dev/null; then sleep 1; fi
-@if pgrep --full "^bitcoind -testnet -rpcport=$(compteur)" >/dev/null; then sleep 1; fi
-@if pgrep --full "^bitcoind -testnet -rpcport=$(compteur)" >/dev/null; then sleep 1; fi
-@if pgrep --full "^bitcoind -testnet -rpcport=$(compteur)" >/dev/null; then sleep 1; fi
-@if pgrep --full "^bitcoind -testnet -rpcport=$(compteur)" >/dev/null; then echo Error: unable to stop bitcoind on port $(compteur); exit 1; fi
+@if pgrep -f "^bitcoind -testnet -rpcport=$(compteur)" >/dev/null; then sleep 1; fi
+@if pgrep -f "^bitcoind -testnet -rpcport=$(compteur)" >/dev/null; then sleep 1; fi
+@if pgrep -f "^bitcoind -testnet -rpcport=$(compteur)" >/dev/null; then sleep 1; fi
+@if pgrep -f "^bitcoind -testnet -rpcport=$(compteur)" >/dev/null; then sleep 1; fi
+@if pgrep -f "^bitcoind -testnet -rpcport=$(compteur)" >/dev/null; then echo Error: unable to stop bitcoind on port $(compteur); exit 1; fi
 @sleep 1
 @rm -rf $(RUNDIR)/bitcoin-test-data
 endef
@@ -59,7 +59,7 @@ OUTPUT = $(addsuffix .out, $(basename $<))
 RUNDIR = testrun/$(notdir $@)
 
 
-%.test : %.run %.golden glacierscript.py
+%.test : %.run %.golden glacierscript.py prereqs
 	$(cleanup_bitcoind)
 	@mkdir -p $(RUNDIR)/bitcoin-test-data
 	cd $(RUNDIR) && ../../$< $(compteur) 2>&1 > ../../$(OUTPUT)
@@ -68,3 +68,9 @@ RUNDIR = testrun/$(notdir $@)
 	$(cleanup_bitcoind)
 	@rm -rf $(RUNDIR)
 	@rm $(OUTPUT)
+
+
+prereqs:
+	@which bitcoind > /dev/null || (echo 'Error: unable to find bitcoind'; exit 1)
+	@which zbarimg > /dev/null || (echo 'Error: unable to find zbarimg (from package zbar-tools)'; exit 1)
+	@which qrencode > /dev/null || (echo 'Error: unable to find qrencode'; exit 1)
