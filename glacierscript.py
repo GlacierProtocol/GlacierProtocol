@@ -392,18 +392,18 @@ def find_pubkeys_in_script(decoded_script):
         sys.exit()
     return keys
 
-def teach_address_to_wallet(source_address, redeem_script, keys):
+def teach_address_to_wallet(source_address, redeem_script, privkeys):
     """
     Teaches the bitcoind wallet about our multisig address, so it can
     use that knowledge to sign the transaction we're about to create.
 
     source_address: <string> multisig address
     redeem_script: <string>
-    keys: List<string> The private keys you wish to sign with
+    privkeys: List<string> The private keys you wish to sign with
     """
 
     # First teach the wallet about each of our privkeys
-    for key in keys:
+    for key in privkeys:
         subprocess.check_call(bitcoin_cli + "importprivkey {0}".format(key), shell=True)
 
     # Rather ugly: see https://github.com/bitcoin/bitcoin/issues/12418
