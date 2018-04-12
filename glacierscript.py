@@ -271,7 +271,7 @@ def require_minimum_bitcoind_version(min_version):
     networkinfo = json.loads(networkinfo_str)
 
     if int(networkinfo["version"]) < min_version:
-        print "ERROR: Your bitcoind version is too old. Exiting..."
+        print "ERROR: Your bitcoind version is too old. You have {}, I need {} or newer. Exiting...".format(networkinfo["version"], min_version)
         sys.exit()
 
 def get_address_for_wif_privkey(privkey):
