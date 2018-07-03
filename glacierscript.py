@@ -249,7 +249,7 @@ def ensure_bitcoind_running():
     # message (to /dev/null) and exit.
     #
     # -connect=0.0.0.0 because we're doing local operations only (and have no network connection anyway)
-    subprocess.call(bitcoind + "-deprecatedrpc=createmultisig -daemon -connect=0.0.0.0",
+    subprocess.call(bitcoind + "-daemon -connect=0.0.0.0",
                     shell=True, stdout=devnull, stderr=devnull)
 
     # verify bitcoind started up and is functioning correctly
@@ -262,6 +262,17 @@ def ensure_bitcoind_running():
 
     raise Exception("Timeout while starting bitcoin server")
 
+def require_minimum_bitcoind_version(min_version):
+    """
+    Fail if the bitcoind version in use is older than required
+    <min_version> - required minimum version in format of getnetworkinfo, i.e. 150100 for v0.15.1
+    """
+    networkinfo_str = subprocess.check_output(bitcoin_cli + "getnetworkinfo", shell=True)
+    networkinfo = json.loads(networkinfo_str)
+
+    if int(networkinfo["version"]) < min_version:
+        print "ERROR: Your bitcoind version is too old. You have {}, I need {} or newer. Exiting...".format(networkinfo["version"], min_version)
+        sys.exit()
 
 def get_address_for_wif_privkey(privkey):
     """A method for retrieving the address associated with a private key from bitcoin core
@@ -286,6 +297,21 @@ def get_address_for_wif_privkey(privkey):
     addresses_json = json.loads(addresses)
     return addresses_json[0]
 
+
+def addmultisigaddress(m, addresses_or_pubkeys, address_type='p2sh-segwit'):
+    """
+    Call `bitcoin-cli addmultisigaddress`
+    returns => JSON response from bitcoin-cli
+
+    m: <int> number of multisig keys required for withdrawal
+    addresses_or_pubkeys: List<string> either addresses or hex pubkeys for each of the N keys
+    """
+
+    require_minimum_bitcoind_version(160000) # addmultisigaddress API changed in v0.16.0
+    address_string = json.dumps(addresses_or_pubkeys)
+    argstring = "{0} '{1}' '' '{2}'".format(m, address_string, address_type)
+    return json.loads(subprocess.check_output(
+        bitcoin_cli + "addmultisigaddress {0}".format(argstring), shell=True))
 
 def get_utxos(tx, address):
     """ 
@@ -359,7 +385,7 @@ def sign_transaction(source_address, keys, redeem_script, unsigned_hex, input_tx
     input_txs: List<dict> A list of input transactions to use (bitcoind decoded format)
     """
 
-    # For each UTXO used as input, we need the txid, vout index, scriptPubKey, and redeemScript
+    # For each UTXO used as input, we need the txid, vout index, scriptPubKey, amount, and redeemScript
     # to generate a signature
     inputs = []
     for tx in input_txs:
@@ -369,6 +395,7 @@ def sign_transaction(source_address, keys, redeem_script, unsigned_hex, input_tx
             inputs.append({
                 "txid": txid,
                 "vout": int(utxo["n"]),
+                "amount": utxo["value"],
                 "scriptPubKey": utxo["scriptPubKey"]["hex"],
                 "redeemScript": redeem_script
             })
@@ -405,7 +432,7 @@ def get_fee_interactive(source_address, keys, destinations, redeem_script, input
     approve = False
     while not approve:
         print "\nEnter fee rate."
-        fee_basis_satoshis_per_byte = int(raw_input("Satoshis per byte: "))
+        fee_basis_satoshis_per_byte = int(raw_input("Satoshis per vbyte: "))
 
         unsigned_tx = create_unsigned_transaction(
             source_address, destinations, redeem_script, input_txs)
@@ -413,7 +440,9 @@ def get_fee_interactive(source_address, keys, destinations, redeem_script, input
         signed_tx = sign_transaction(source_address, keys,
                                      redeem_script, unsigned_tx, input_txs)
 
-        size = len(signed_tx["hex"]) / 2
+        decoded_tx = json.loads(subprocess.check_output(
+                bitcoin_cli + "decoderawtransaction {0}".format(signed_tx["hex"]), shell=True))
+        size = decoded_tx["vsize"]
 
         fee = size * fee_basis_satoshis_per_byte
         fee = satoshi_to_btc(fee)
@@ -586,14 +615,7 @@ def deposit_interactive(m, n, dice_seed_length=62, rng_seed_length=20):
     print "Generating {0}-of-{1} cold storage address...\n".format(m, n)
 
     addresses = [get_address_for_wif_privkey(key) for key in keys]
-    address_string = json.dumps(addresses)
-    # line below is unneeded now, right?
-    # label = random.randint(0, 2**128)
-
-    argstring = "{0} '{1}'".format(m, address_string)
-    results = subprocess.check_output(
-        bitcoin_cli + "createmultisig {0}".format(argstring), shell=True)
-    results = json.loads(results)
+    results = addmultisigaddress(m, addresses)
 
     print "Private keys:"
     for idx, key in enumerate(keys):

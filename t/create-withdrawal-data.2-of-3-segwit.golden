@@ -15,41 +15,34 @@ input a filename located in the current directory which contains the raw transac
 (If the transaction data is over ~4000 characters long, you _must_ use a file.):
 
 Transaction data found for source address.
-TOTAL unspent amount for this raw transaction: 0.00005000 BTC
+TOTAL unspent amount for this raw transaction: 0.20000000 BTC
 
 How many private keys will you be signing this transaction with? 
 #: Key #1: Key #2: 
 Enter fee rate.
 Satoshis per vbyte: 
-Based on the provided rate, the fee will be 0.00000405 bitcoin.
-Confirm? (y/n): 
-Fee calculation aborted. Starting over...
-
-Enter fee rate.
-Satoshis per vbyte: 
-Based on the provided rate, the fee will be 0.00004050 bitcoin.
+Based on the provided rate, the fee will be 0.00002160 bitcoin.
 Confirm? (y/n): 
 Please enter the decimal amount (in bitcoin) to withdraw to the destination address.
 
 Example: For 2.3 bitcoins, enter "2.3".
 
-After a fee of 0.00004050, you have 0.00000950 bitcoins available to withdraw.
+After a fee of 0.00002160, you have 0.19997840 bitcoins available to withdraw.
 
 *** Technical note for experienced Bitcoin users:  If the withdrawal amount & fee are cumulatively less than the total amount of the unspent transactions, the remainder will be sent back to the same cold storage address as change. ***
 
-Amount to send to mp1KQzUoDf9div7jjgon3UuqLThMSo3tmF (leave blank to withdraw all funds stored in these unspent transactions): 0.00000550 being returned to cold storage address address 2N238gpicqPFfMz8sUN7pqqaJnYkgsC1WmL.
-
+Amount to send to mxBQD1QAYpwiudaCJdRhE9QSW9cokafJ99 (leave blank to withdraw all funds stored in these unspent transactions): 
 Is this data correct?
 *** WARNING: Incorrect data may lead to loss of funds ***
 
-0.00005000 BTC in unspent supplied transactions
-0.00000400 BTC going to destination address mp1KQzUoDf9div7jjgon3UuqLThMSo3tmF
-0.00000550 BTC going back to cold storage address 2N238gpicqPFfMz8sUN7pqqaJnYkgsC1WmL
-Fee amount: 0.00004050
+0.20000000 BTC in unspent supplied transactions
+0 BTC going back to cold storage address 2MvQKEWTdtH7uM5C72quuMukWNFkFYjm34N
+0.19997840 BTC going to destination address mxBQD1QAYpwiudaCJdRhE9QSW9cokafJ99
+Fee amount: 0.00002160
 
 Signing with private keys: 
-cSfvoUsWWZ81M4qGYciPHdNxHXQxPEsXBdGWjYdchpisPabtiKVQ
-cPWVKeCBjnv833Kayc6nczBbG4YqqbCucup3n5D68WPzBEfceBAQ
+cMvAmArzxkXMh8k5FcaRWLBA2SgDSc2U8q1YE5hSLSek1GuyFBP3
+cPSsBu9SyNVAS2Evy3m4ELFx7KGnudH3N77Es83nafa2xVWJGRSe
 
 
 Confirm? (y/n): 
@@ -60,8 +53,8 @@ Sufficient private keys to execute transaction?
 True
 
 Raw signed transaction (hex):
-0200000001a8e5747945c89c0c5eb8a5d04fb397f0650b80403c7204856cd0a704edb9fb0501000000fd200100483045022100caa00d3c8ef4c941333d01e4a0def446ebf3f0fc43a00eb554237e4ea31a935002203afc60ad2e4a9ceb2ef77a4ffc8feaec4b556e8630deb5553fc9df9bbca4eaaa01483045022100f46454a0405370241117855c9a1672a605be31469886b5c99bcb837bc9ab9553022026aeba83b18759cd168f707ec90ce1065d3941c2a925123462d98d0455250b5a014c8b52210277f15f22aeffaf3f3bc48a280a767f7c6af21276783c09ff3bcaabbece178113210203f642223bc751e125ab604ed20c544e933eb82a19201f90bda6236a9ddbedac21026895f3ed01c09025ba9cfab7b67d699e3ebaceada0beff70bc72c7f10df2d1c621039f3cb152130c241e01b9220a147f69f7111b830def35b510973ab47bb9af7ff654aeffffffff0290010000000000001976a9145d1e4870ab9df56432aa357021fd0a15a7094ad188ac260200000000000017a914606fb72624603795d73b911a729d88f95f9b6ac88700000000
+0200000000010154f3a5ba6a5a2beb6975c59895ad36fe84aa622edbaa662dadbd6e2a7a8a84670300000023220020d017965b0cae52a8b6f6e43b00118be27dae84b825959dcb77ca6b5310e53ea3ffffffff0190243101000000001976a914b6c7733e23a271e57ca16e5cd885174917968db988ac040047304402201b0c3ad02553622a437b3f108d3e9d3716408c60e95628a17e6ebcfa00d7809e022056e6c447a2b12d9bb923ea50733cc48a21b62ff17ac7291d918ea008b6d1dd7701473044022056136d366d663e037f2a98c1e988b3b7b845115af27a227c22a854ec4030d490022023232483b21e822f069afff91161347b0b2ef83c6e87681b721454f9db9d907601695221035a0cf2b8ad46945154d80b339f730ac0cdbc39a95550a95821adf6df6e6e3c9421038f339e9149fda8496360d689b5d6b4d66f8e64e28b1c89846efd0831512eab882103442945263f31819baf5799dc9595eba49b8f6674dadf21189f717abd630ab15053ae00000000
 
 Transaction fingerprint (md5):
-2a5fe55f06ea68d522d03f930a9c7d03
+09a77988e190f98c5f199fdbb64a1f7e
 QR code for transaction written to transaction.png
