@@ -21,13 +21,13 @@ How many private keys will you be signing this transaction with?
 #: Key #1: Key #2: 
 Enter fee rate.
 Satoshis per vbyte: 
-Based on the provided rate, the fee will be 0.00003720 bitcoin.
+Based on the provided rate, the fee will be 0.00003690 bitcoin.
 Confirm? (y/n): 
 Please enter the decimal amount (in bitcoin) to withdraw to the destination address.
 
 Example: For 2.3 bitcoins, enter "2.3".
 
-After a fee of 0.00003720, you have 0.19996280 bitcoins available to withdraw.
+After a fee of 0.00003690, you have 0.19996310 bitcoins available to withdraw.
 
 *** Technical note for experienced Bitcoin users:  If the withdrawal amount & fee are cumulatively less than the total amount of the unspent transactions, the remainder will be sent back to the same cold storage address as change. ***
 
@@ -36,9 +36,9 @@ Is this data correct?
 *** WARNING: Incorrect data may lead to loss of funds ***
 
 0.20000000 BTC in unspent supplied transactions
-0.19996280 BTC going to destination address mxBQD1QAYpwiudaCJdRhE9QSW9cokafJ99
+0.19996310 BTC going to destination address mxBQD1QAYpwiudaCJdRhE9QSW9cokafJ99
 0 BTC going back to cold storage address 2NGPJX8kzdRpAQJuZWMpCBth1umjQFHeFcz
-Fee amount: 0.00003720
+Fee amount: 0.00003690
 
 Signing with private keys: 
 cVV1MBAgdAnrX8bjQWSJcgZAbVtprR8kgdfez858ejvXs3qZWqn2
@@ -53,8 +53,8 @@ Sufficient private keys to execute transaction?
 True
 
 Raw signed transaction (hex):
-020000000154f3a5ba6a5a2beb6975c59895ad36fe84aa622edbaa662dadbd6e2a7a8a846700000000fc00473044022041f7d2a4dfda3ca87c96c3423c1d8bd7c0fd3e4106ea45859e7096fe4e92a7e1022072bf30309ef4b1853698110278f9be266ad9a2a6ae4744801285f64df9a1759a0147304402202ef4b9aa41f29190749815304322c33a79b173ca56d147e99b276819e8ee57b502203749dd85eca8a88e43b694c10834613a20e7eec5214fa2123d8848ff521e0377014c6952210320849607eed265c09f51cda0e972426558276384870651250aa4e8638c334ced2102766c70472a8a3de751d126eddac8436338f8447b1967b5aa3b12a2b9a6e712e921039080ddc448e7fe4985676a7d2d6567dfc2febb8207a6f29b9737233f4c3b44d653aeffffffff01781e3101000000001976a914b6c7733e23a271e57ca16e5cd885174917968db988ac00000000
+020000000154f3a5ba6a5a2beb6975c59895ad36fe84aa622edbaa662dadbd6e2a7a8a846700000000fc00473044022054cdbf40532edd4dbd110ac9eab77b3a27ca11b506faf52e4bfa2f7f6926685a02202400c5aea03986244bb08fa272fca972284f2c2a0f495107a76abcb141ca96e10147304402203166c26bf85a7cff3bcda206ba653a49644cd8d06149cc5b71021c66fae44d8402203dec7d8dbc4eac5d50533461d5f5de7d24f8bf5f5761bd1e1ce462cee6b3caf5014c6952210320849607eed265c09f51cda0e972426558276384870651250aa4e8638c334ced2102766c70472a8a3de751d126eddac8436338f8447b1967b5aa3b12a2b9a6e712e921039080ddc448e7fe4985676a7d2d6567dfc2febb8207a6f29b9737233f4c3b44d653aeffffffff01961e3101000000001976a914b6c7733e23a271e57ca16e5cd885174917968db988ac00000000
 
 Transaction fingerprint (md5):
-4dd35277aad2e8fc2723cd127e30d664
+2962034646fe6a888509747a14f4146c
 QR code for transaction written to transaction.png
