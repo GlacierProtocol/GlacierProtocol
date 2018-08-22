@@ -1,0 +1,24 @@
+#!/bin/bash
+#
+# For every create-withdrawal-data.*.golden, use bitcoin-cli
+# "decoderawtransaction" to dump the contents of the constructed
+# transaction.
+#
+# I'm using this to document the changes that Bitcoin Core v0.17 is
+# making to the transactions (shorter signatures thanks to
+# https://github.com/bitcoin/bitcoin/pull/13666)
+#
+
+bitcoind -testnet -daemon -connect=0.0.0.0
+# Give bitcoind time to start up
+sleep 5
+
+
+
+for i in create-withdrawal-data.*.golden; do
+    bitcoin-cli -testnet decoderawtransaction `(tail --lines=5 $i | head --lines=1)` > "${i/%.golden/.decoded}"
+done
+
+
+
+bitcoin-cli -testnet stop
