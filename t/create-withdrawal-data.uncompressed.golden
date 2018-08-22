@@ -61,7 +61,4 @@ Raw signed transaction (hex):
 
 Transaction fingerprint (md5):
 b9cae77b3beb68420a05c428febeb0ba
-********************************************************************
-WARNING: transaction QR code could not be verified properly. This could be a sign of a security breach.
-********************************************************************
 QR code for transaction written to transaction.png
