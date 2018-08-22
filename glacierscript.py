@@ -252,7 +252,7 @@ def ensure_bitcoind_running():
     #
     # The only way to make our signrawtransaction compatible with both 0.16 and 0.17 is using this -deprecatedrpc=signrawtransaction..
     # Once Bitcoin Core v0.17 is published on the Ubuntu PPA we should:
-    # 1. Convert signrawtransaction to signrawtransactionwithkeys (note, argument order changes)
+    # 1. [done] Convert signrawtransaction to signrawtransactionwithkey (note, argument order changes)
     # 2. Remove this -deprecatedrpc=signrawtransaction
     # 3. Change getaddressesbyaccount to getaddressesbylabel
     # 4. Remove this -deprecatedrpc=accounts
@@ -408,9 +408,9 @@ def sign_transaction(source_address, keys, redeem_script, unsigned_hex, input_tx
             })
 
     argstring_2 = "{0} '{1}' '{2}'".format(
-        unsigned_hex, json.dumps(inputs), json.dumps(keys))
+        unsigned_hex, json.dumps(keys), json.dumps(inputs))
     signed_hex = subprocess.check_output(
-        bitcoin_cli + "signrawtransaction {0}".format(argstring_2), shell=True).strip()
+        bitcoin_cli + "signrawtransactionwithkey {0}".format(argstring_2), shell=True).strip()
 
     signed_tx = json.loads(signed_hex)
     return signed_tx
@@ -654,6 +654,7 @@ def withdraw_interactive():
 
     safety_checklist()
     ensure_bitcoind_running()
+    require_minimum_bitcoind_version(170000) # signrawtransaction API changed in v0.17.0
 
     approve = False
 
