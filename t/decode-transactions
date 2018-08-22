@@ -16,9 +16,15 @@ sleep 5
 
 
 for i in create-withdrawal-data.*.golden; do
-    bitcoin-cli -testnet decoderawtransaction `(tail --lines=5 $i | head --lines=1)` > "${i/%.golden/.decoded}"
+    # Find longest line (which will be the transaction hex)
+    # Ref: https://stackoverflow.com/a/7213247
+    # With minor mod to capture the line's contents instead of length
+    MAX=
+    while read -r line; do
+        if [ ${#line} -gt ${#MAX} ]; then MAX=$line; fi
+    done < "$i"
+    bitcoin-cli -testnet decoderawtransaction "$MAX" > "${i/%.golden/.decoded}"
 done
-
 
 
 bitcoin-cli -testnet stop
