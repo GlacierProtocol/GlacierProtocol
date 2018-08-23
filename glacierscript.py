@@ -286,19 +286,19 @@ def get_address_for_wif_privkey(privkey):
        <privkey> - a bitcoin private key in WIF format"""
 
     # Bitcoin Core doesn't have an RPC for "get the addresses associated w/this private key"
-    # just "get the addresses associated with this account"
-    # where "account" corresponds to an arbitrary tag we can associate with each private key
-    # so, we'll generate a unique "account number" to put this private key into.
+    # just "get the addresses associated with this label"
+    # where "label" corresponds to an arbitrary tag we can associate with each private key
+    # so, we'll generate a unique "label" to attach to this private key.
     #
     # we're running on a fresh bitcoind installation in the Glacier Protocol, so there's no
-    # meaningful risk here of colliding with previously-existing account numbers.
-    account_number = random.randint(0, 2**128)
+    # meaningful risk here of colliding with previously-existing labels.
+    label = random.randint(0, 2**128)
 
     ensure_bitcoind_running()
     subprocess.call(
-        bitcoin_cli + "importprivkey {0} {1}".format(privkey, account_number), shell=True)
+        bitcoin_cli + "importprivkey {0} {1}".format(privkey, label), shell=True)
     addresses = subprocess.check_output(
-        bitcoin_cli + "getaddressesbylabel {0}".format(account_number), shell=True)
+        bitcoin_cli + "getaddressesbylabel {0}".format(label), shell=True)
 
     # extract address from JSON output
     addresses_json = json.loads(addresses)
