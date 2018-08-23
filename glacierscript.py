@@ -254,7 +254,7 @@ def ensure_bitcoind_running():
     # Once Bitcoin Core v0.17 is published on the Ubuntu PPA we should:
     # 1. [done] Convert signrawtransaction to signrawtransactionwithkey (note, argument order changes)
     # 2. [done] Remove this -deprecatedrpc=signrawtransaction
-    # 3. Change getaddressesbyaccount to getaddressesbylabel
+    # 3. [done] Change getaddressesbyaccount to getaddressesbylabel
     # 4. Remove this -deprecatedrpc=accounts
     subprocess.call(bitcoind + "-daemon -connect=0.0.0.0 -deprecatedrpc=accounts",
                     shell=True, stdout=devnull, stderr=devnull)
@@ -298,17 +298,17 @@ def get_address_for_wif_privkey(privkey):
     subprocess.call(
         bitcoin_cli + "importprivkey {0} {1}".format(privkey, account_number), shell=True)
     addresses = subprocess.check_output(
-        bitcoin_cli + "getaddressesbyaccount {0}".format(account_number), shell=True)
+        bitcoin_cli + "getaddressesbylabel {0}".format(account_number), shell=True)
 
     # extract address from JSON output
     addresses_json = json.loads(addresses)
 
-    # getaddressesbyaccount returns multiple addresses associated with
+    # getaddressesbylabel returns multiple addresses associated with
     # this one privkey; since we use it only for communicating the
     # pubkey to addmultisigaddress, it doesn't matter which one we
     # choose; they are all associated with the same pubkey.
 
-    return addresses_json[0]
+    return next(iter(addresses_json))
 
 
 def addmultisigaddress(m, addresses_or_pubkeys, address_type='p2sh-segwit'):
@@ -602,6 +602,7 @@ def deposit_interactive(m, n, dice_seed_length=62, rng_seed_length=20):
 
     safety_checklist()
     ensure_bitcoind_running()
+    require_minimum_bitcoind_version(170000) # getaddressesbylabel API new in v0.17.0
 
     print "\n"
     print "Creating {0}-of-{1} cold storage address.\n".format(m, n)
