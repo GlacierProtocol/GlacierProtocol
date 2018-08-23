@@ -249,13 +249,6 @@ def ensure_bitcoind_running():
     # message (to /dev/null) and exit.
     #
     # -connect=0.0.0.0 because we're doing local operations only (and have no network connection anyway)
-    #
-    # The only way to make our signrawtransaction compatible with both 0.16 and 0.17 is using this -deprecatedrpc=signrawtransaction..
-    # Once Bitcoin Core v0.17 is published on the Ubuntu PPA we should:
-    # 1. [done] Convert signrawtransaction to signrawtransactionwithkey (note, argument order changes)
-    # 2. [done] Remove this -deprecatedrpc=signrawtransaction
-    # 3. [done] Change getaddressesbyaccount to getaddressesbylabel
-    # 4. [done] Remove this -deprecatedrpc=accounts
     subprocess.call(bitcoind + "-daemon -connect=0.0.0.0",
                     shell=True, stdout=devnull, stderr=devnull)
 
