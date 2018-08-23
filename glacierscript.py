@@ -302,6 +302,12 @@ def get_address_for_wif_privkey(privkey):
 
     # extract address from JSON output
     addresses_json = json.loads(addresses)
+
+    # getaddressesbyaccount returns multiple addresses associated with
+    # this one privkey; since we use it only for communicating the
+    # pubkey to addmultisigaddress, it doesn't matter which one we
+    # choose; they are all associated with the same pubkey.
+
     return addresses_json[0]
 
 
