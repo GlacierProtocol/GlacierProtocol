@@ -312,8 +312,6 @@ def addmultisigaddress(m, addresses_or_pubkeys, address_type='p2sh-segwit'):
     m: <int> number of multisig keys required for withdrawal
     addresses_or_pubkeys: List<string> either addresses or hex pubkeys for each of the N keys
     """
-
-    require_minimum_bitcoind_version(160000) # addmultisigaddress API changed in v0.16.0
     address_string = json.dumps(addresses_or_pubkeys)
     argstring = "{0} '{1}' '' '{2}'".format(m, address_string, address_type)
     return json.loads(subprocess.check_output(
