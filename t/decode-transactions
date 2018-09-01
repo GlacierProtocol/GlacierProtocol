@@ -18,13 +18,13 @@ sleep 5
 for i in create-withdrawal-data.*.golden; do
     # Find line following "Raw signed transaction (hex):"
     MATCH=false
-    MAX=
+    HEX=
     while read -r line; do
-        if [ "$MATCH" = true ]; then MAX=$line; MATCH=false; fi
+        if [ "$MATCH" = true ]; then HEX=$line; MATCH=false; fi
         if [ "$line" = "Raw signed transaction (hex):" ]; then MATCH=true; fi
 
     done < "$i"
-    bitcoin-cli -testnet decoderawtransaction "$MAX" > "${i/%.golden/.decoded}"
+    bitcoin-cli -testnet decoderawtransaction "$HEX" > "${i/%.golden/.decoded}"
 done
 
 
