@@ -249,7 +249,14 @@ def ensure_bitcoind_running():
     # message (to /dev/null) and exit.
     #
     # -connect=0.0.0.0 because we're doing local operations only (and have no network connection anyway)
-    subprocess.call(bitcoind + "-daemon -connect=0.0.0.0",
+    #
+    # The only way to make our signrawtransaction compatible with both 0.16 and 0.17 is using this -deprecatedrpc=signrawtransaction..
+    # Once Bitcoin Core v0.17 is published on the Ubuntu PPA we should:
+    # 1. Convert signrawtransaction to signrawtransactionwithkeys (note, argument order changes)
+    # 2. Remove this -deprecatedrpc=signrawtransaction
+    # 3. Change getaddressesbyaccount to getaddressesbylabel
+    # 4. Remove this -deprecatedrpc=accounts
+    subprocess.call(bitcoind + "-daemon -connect=0.0.0.0 -deprecatedrpc=signrawtransaction -deprecatedrpc=accounts",
                     shell=True, stdout=devnull, stderr=devnull)
 
     # verify bitcoind started up and is functioning correctly
@@ -478,7 +485,7 @@ def write_and_verify_qr_code(name, filename, data):
 
     subprocess.call("qrencode -o {0} {1}".format(filename, data), shell=True)
     check = subprocess.check_output(
-        "zbarimg --quiet --raw {}".format(filename), shell=True)
+        "zbarimg --set '*.enable=0' --set 'qr.enable=1' --quiet --raw {}".format(filename), shell=True)
 
     if check.strip() != data:
         print "********************************************************************"
