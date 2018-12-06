@@ -212,7 +212,7 @@ def xor_hex_strings(str1, str2):
 
     xored = str1_dec ^ str2_dec
 
-    return "{:0{}x}".format(xored, max(len(str1), len(str2)))
+    return "{:0{}x}".format(xored, len(str1))
 
 
 def hex_private_key_to_WIF_private_key(hex_key):
