@@ -493,20 +493,35 @@ def write_and_verify_qr_code(name, filename, data):
     Write a QR code and then read it back to try and detect any tricksy malware tampering with it.
 
     name: <string> short description of the data
-    filename: <string> filename for storing the QR code
+    filename: <string> filename for storing the QR code. note that ".png" is added in function to make incrementing easier
     data: <string> the data to be encoded
     """
 
-    subprocess.call("qrencode -o {0} {1}".format(filename, data), shell=True)
+    # note: it would probably be better to write qr codes to RAM disk or secure volume. while shouldn't contain keys, may increase security by decreasing chance of unencrypted transaction history being discovered
+    QR_SUBDIR = "qrcodes"
+    QR_SUFFIX = ".png"
+    script_root = os.path.dirname(os.path.abspath(__file__))
+    QR_DIRPATH = script_root + "/" + QR_SUBDIR
+    if not os.path.isdir(QR_DIRPATH):
+        os.mkdir(QR_DIRPATH)
+    QR_PATH = QR_DIRPATH + "/" + filename + QR_SUFFIX
+    if os.path.exists(QR_PATH):
+        #print "QR exists at: {0}".format(QR_PATH)
+        i = 2
+        while os.path.exists(QR_DIRPATH + "/" + filename + str(i) + QR_SUFFIX):
+            i += 1
+        QR_PATH = QR_DIRPATH + "/" + filename + str(i) + QR_SUFFIX
+
+    subprocess.call("qrencode -o {0} {1}".format(QR_PATH, data), shell=True)
     check = subprocess.check_output(
-        "zbarimg --set '*.enable=0' --set 'qr.enable=1' --quiet --raw {}".format(filename), shell=True)
+        "zbarimg --set '*.enable=0' --set 'qr.enable=1' --quiet --raw {}".format(QR_PATH), shell=True)
 
     if check.strip() != data:
         print "********************************************************************"
         print "WARNING: {} QR code could not be verified properly. This could be a sign of a security breach.".format(name)
         print "********************************************************************"
 
-    print "QR code for {0} written to {1}".format(name, filename)
+    print "QR code for {0} written to {1}".format(name, QR_PATH)
 
 
 ################################################################################################
@@ -659,8 +674,8 @@ def deposit_interactive(m, n, dice_seed_length=62, rng_seed_length=20):
     print "{}".format(results["redeemScript"])
     print ""
 
-    write_and_verify_qr_code("cold storage address", "address.png", results["address"])
-    write_and_verify_qr_code("redemption script", "redemption.png",
+    write_and_verify_qr_code("cold storage address", "address", results["address"])
+    write_and_verify_qr_code("redemption script", "redemption",
                        results["redeemScript"])
 
 
@@ -813,7 +828,7 @@ def withdraw_interactive():
     print "\nTransaction fingerprint (md5):"
     print hash_md5(signed_tx["hex"])
 
-    write_and_verify_qr_code("transaction", "transaction.png", signed_tx["hex"])
+    write_and_verify_qr_code("transaction", "transaction", signed_tx["hex"])
 
 
 ################################################################################################
@@ -827,7 +842,7 @@ def withdraw_interactive():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('program', choices=[
-                        'entropy', 'create-deposit-data', 'create-withdrawal-data'])
+                        'entropy', 'create-deposit-data', 'create-withdrawal-data','qr-code'])
 
     parser.add_argument("--num-keys", type=int,
                         help="The number of keys to create random entropy for", default=1)
@@ -840,6 +855,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-n", type=int, help="Number of total keys required in an m-of-n multisig address creation (default m-of-n = 1-of-2)", default=2)
     parser.add_argument('--testnet', type=int, help=argparse.SUPPRESS)
+    parser.add_argument("-q", "--qrdata", help="Data to be encoded into qr-code")
     parser.add_argument('-v', action='store_const',
                         default=0,
                         dest='VERBOSE_MODE',
@@ -864,3 +880,6 @@ if __name__ == "__main__":
 
     if args.program == "create-withdrawal-data":
         withdraw_interactive()
+
+    if args.program == "qr-code":
+        write_and_verify_qr_code("qrcode", "qrcode", args.qrdata)
