@@ -43,6 +43,10 @@ SATOSHI_PLACES = Decimal("0.00000001")
 VERBOSE_MODE = 0
 # if VERBOSE_MODE is 1 will display more verbose output including most bitcoin-cli calls (see help/main-arguments re toggling)
 
+SINGLE_SAFETY_CONFIRM = 1
+#if SINGLE_SAFETY_CONFIRM set to 1 will suppress manually entering in "y" repeatedly for safety checklist (replaces with single confirmation)
+#repeated prompts like this aren't going to save anyone from catastrophe and make debugging/development laborious on repeated runs - if users need this for the safety items they have bigger problems on their hands
+
 ################################################################################################
 #
 # Minor helper functions
@@ -537,7 +541,17 @@ def safety_checklist():
         "Are smartphones and all other nearby devices turned off and in a Faraday bag?"]
 
     for check in checks:
-        answer = raw_input(check + " (y/n)?")
+        if SINGLE_SAFETY_CONFIRM is 0:
+            answer = raw_input(check + " (y/n)?")
+            if answer.upper() != "Y":
+                print "\n Safety check failed. Exiting."
+                sys.exit()
+        else:
+            print check + "\n"
+
+    if SINGLE_SAFETY_CONFIRM is 1:
+        # this could clearly be more efficient/condensed w above block
+        answer = raw_input("confirm the above (y/n): ")
         if answer.upper() != "Y":
             print "\n Safety check failed. Exiting."
             sys.exit()
@@ -833,7 +847,7 @@ if __name__ == "__main__":
                         help='increase output verbosity including showing bitcoin-cli calls/outputs')
 
     args = parser.parse_args()
-    
+
     VERBOSE_MODE = args.VERBOSE_MODE
 
     global bitcoind, bitcoin_cli, wif_prefix
