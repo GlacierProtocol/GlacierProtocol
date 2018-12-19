@@ -88,6 +88,9 @@ def btc_to_satoshi(btc):
     value = btc * 100000000
     return int(value)
 
+def btc_to_mbtc(btc):
+    mbtc = Decimal(btc)*1000
+    return mbtc.quantize(SATOSHI_PLACES)
 
 ################################################################################################
 #
@@ -471,7 +474,7 @@ def get_fee_interactive(source_address, keys, destinations, redeem_script, input
         if fee > MAX_FEE:
             print "Calculated fee ({}) is too high. Must be under {}".format(fee, MAX_FEE)
         else:
-            print "\nBased on the provided rate, the fee will be {} bitcoin.".format(fee)
+            print "\nBased on the provided rate, the fee will be {0} bitcoin = {1} mBTC.".format(fee,btc_to_mbtc(fee))
             confirm = yes_no_interactive()
 
             if confirm:
@@ -797,7 +800,7 @@ def withdraw_interactive():
                 print "{0} BTC going back to cold storage address {1}".format(value, address)
             else:
                 print "{0} BTC going to destination address {1}".format(value, address)
-        print "Fee amount: {0}".format(fee)
+        print "Fee amount: {0} btc ({1} mbtc)".format(fee,btc_to_mbtc(fee))
         print "\nSigning with private keys: "
         for key in keys:
             print "{}".format(key)
