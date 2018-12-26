@@ -47,6 +47,9 @@ SINGLE_SAFETY_CONFIRM = 1
 #if SINGLE_SAFETY_CONFIRM set to 1 will suppress manually entering in "y" repeatedly for safety checklist (replaces with single confirmation)
 #repeated prompts like this aren't going to save anyone from catastrophe and make debugging/development laborious on repeated runs - if users need this for the safety items they have bigger problems on their hands
 
+RE_SIGN_MODE = 0
+# RE_SIGN_MODE set to 1 to sign a partially-signed transaction (rather than newly created tx) - used in withdraw interactive function. toggled with "sign-transaction" script call
+
 ################################################################################################
 #
 # Minor helper functions
@@ -706,21 +709,84 @@ def withdraw_interactive():
         print "\n\n*** PLEASE BE SURE TO ENTER THE CORRECT DESTINATION ADDRESS ***\n"
 
         source_address = raw_input("\nSource cold storage address: ")
+
+        if RE_SIGN_MODE is not 1:
+            redeem_script = raw_input("\nRedemption script for source cold storage address: ")
+            dest_address = raw_input("\nDestination address: ")
+            num_tx = int(raw_input("\nHow many unspent transactions will you be using for this withdrawal? "))
+        else:
+            # begin main re-sign code block
+            print "\nPlease paste the partially-signed raw transaction (hexadecimal format) with unspent outputs at the source address"
+            print "OR"
+            print "input a filename located in the current directory which contains the raw transaction data"
+            print "(If the transaction data is over ~4000 characters long, you _must_ use a file.):"
+
+            part_signed_hex_tx = raw_input()
+            if os.path.isfile(part_signed_hex_tx):
+                part_signed_hex_tx = open(part_signed_hex_tx).read().strip()
+
+            part_signed_tx = json.loads(bitcoin_cli_call("decoderawtransaction",part_signed_hex_tx))
+            redeem_script=part_signed_tx["vin"][0]["txinwitness"][-1]
+            num_tx = len(part_signed_tx["vin"])
+
+            # parse change amount & destination address from partly-signed data
+            if len(part_signed_tx["vout"]) is 1:
+                verbose("only 1 transaction output indicates entire balance being withdrawn (change amount = 0)")
+                #thus destination address data in vout[0]
+                change_amount = Decimal(0)
+                withdrawal_amount = Decimal(part_signed_tx["vout"][0]["value"]).quantize(SATOSHI_PLACES)
+                dest_address = part_signed_tx["vout"][0]["scriptPubKey"]["addresses"][0]
+            else:
+                verbose("multiple outputs indicates change to be delivered back to cold storage address")
+                # ascertain where destination and change addresses are in vout array
+                cold_storage_vout_index = -1
+                destination_vout_index = -1
+                i = 0
+                for output in part_signed_tx["vout"]:
+                    for address in output["scriptPubKey"]["addresses"]:
+                        if address == source_address:
+                            cold_storage_vout_index = i
+                            break
+                    i += 1
+
+                if cold_storage_vout_index is -1:
+                    print "could not find cold storage source address in partially signed transaction hex (more than 1 output without cold address found in these for change!)! exiting..."
+                    sys.exit()
+                if cold_storage_vout_index == 0:
+                    destination_vout_index = 1
+                else:
+                    destination_vout_index = 0
+                dest_address = part_signed_tx["vout"][destination_vout_index]["scriptPubKey"]["addresses"][0]
+
+                # now parse out amounts knowing array positions of source/destination vouts
+                change_amount = Decimal(part_signed_tx["vout"][cold_storage_vout_index]["value"]).quantize(SATOSHI_PLACES)
+                withdrawal_amount = Decimal(part_signed_tx["vout"][destination_vout_index]["value"]).quantize(SATOSHI_PLACES)
+
+            print"\nfollowing variables parsed from partially signed hex input:"
+            print "\n    cold storage / source_address: {0}".format(source_address)
+            print "\n    redemption script: {0}".format(redeem_script)
+            print "\n    destination address: {0}".format(dest_address)
+            print "\n    number of input transactions: {0}".format(num_tx)
+            print "\n    change amount: {0}".format(change_amount)
+            print "\n    withdrawal amount: {0}".format(withdrawal_amount)
+
+            print "\n\nplease confirm whether above data is correct before proceeding to input additional data for transaction re-sign"
+            confirm = yes_no_interactive()
+            if not confirm:
+                print "auto parsed data from transaction incorrect so aborting"
+                sys.exit()
+            # end main re-sign code block
+
         addresses[source_address] = 0
-
-        redeem_script = raw_input("\nRedemption script for source cold storage address: ")
-
-        dest_address = raw_input("\nDestination address: ")
         addresses[dest_address] = 0
 
-        num_tx = int(raw_input("\nHow many unspent transactions will you be using for this withdrawal? "))
-
-        txs = []
+        # input_txs was "txs" (renamed for clarity)
+        input_txs = []
         utxos = []
         utxo_sum = Decimal(0).quantize(SATOSHI_PLACES)
 
-        while len(txs) < num_tx:
-            print "\nPlease paste raw transaction #{} (hexadecimal format) with unspent outputs at the source address".format(len(txs) + 1)
+        while len(input_txs) < num_tx:
+            print "\nPlease paste raw transaction #{} (hexadecimal format) with unspent outputs at the source address".format(len(input_txs) + 1)
             print "OR"
             print "input a filename located in the current directory which contains the raw transaction data"
             print "(If the transaction data is over ~4000 characters long, you _must_ use a file.):"
@@ -730,7 +796,7 @@ def withdraw_interactive():
                 hex_tx = open(hex_tx).read().strip()
 
             tx = json.loads(bitcoin_cli_call("decoderawtransaction",hex_tx))
-            txs.append(tx)
+            input_txs.append(tx)
             utxos += get_utxos(tx, source_address)
 
         if len(utxos) == 0:
@@ -756,36 +822,40 @@ def withdraw_interactive():
         ###### fees, amount, and change #######
 
         input_amount = utxo_sum
-        fee = get_fee_interactive(
-            source_address, keys, addresses, redeem_script, txs)
-        # Got this far
-        if fee > input_amount:
-            print "ERROR: Your fee is greater than the sum of your unspent transactions.  Try using larger unspent transactions. Exiting..."
-            sys.exit()
+        # exclude re-sign mode from running fee calculation function again
+        if RE_SIGN_MODE is not 1:
+            fee = get_fee_interactive(
+                source_address, keys, addresses, redeem_script, input_txs)
+            # Got this far
+            if fee > input_amount:
+                print "ERROR: Your fee is greater than the sum of your unspent transactions.  Try using larger unspent transactions. Exiting..."
+                sys.exit()
 
-        print "\nPlease enter the decimal amount (in bitcoin) to withdraw to the destination address."
-        print "\nExample: For 2.3 bitcoins, enter \"2.3\"."
-        print "\nAfter a fee of {0}, you have {1} bitcoins available to withdraw.".format(fee, input_amount - fee)
-        print "\n*** Technical note for experienced Bitcoin users:  If the withdrawal amount & fee are cumulatively less than the total amount of the unspent transactions, the remainder will be sent back to the same cold storage address as change. ***\n"
-        withdrawal_amount = raw_input(
-            "Amount to send to {0} (leave blank to withdraw all funds stored in these unspent transactions): ".format(dest_address))
-        if withdrawal_amount == "":
-            withdrawal_amount = input_amount - fee
+            print "\nPlease enter the decimal amount (in bitcoin) to withdraw to the destination address."
+            print "\nExample: For 2.3 bitcoins, enter \"2.3\"."
+            print "\nAfter a fee of {0}, you have {1} bitcoins available to withdraw.".format(fee, input_amount - fee)
+            print "\n*** Technical note for experienced Bitcoin users:  If the withdrawal amount & fee are cumulatively less than the total amount of the unspent transactions, the remainder will be sent back to the same cold storage address as change. ***\n"
+            withdrawal_amount = raw_input(
+                "Amount to send to {0} (leave blank to withdraw all funds stored in these unspent transactions): ".format(dest_address))
+            if withdrawal_amount == "":
+                withdrawal_amount = input_amount - fee
+            else:
+                withdrawal_amount = Decimal(withdrawal_amount).quantize(SATOSHI_PLACES)
+
+            if fee + withdrawal_amount > input_amount:
+                print "Error: fee + withdrawal amount greater than total amount available from unspent transactions"
+                raise Exception("Output values greater than input value")
+
+            change_amount = input_amount - withdrawal_amount - fee
+
+            # less than a satoshi due to weird floating point imprecision
+            if change_amount < 1e-8:
+                change_amount = 0
+
+            if change_amount > 0:
+                print "{0} being returned to cold storage address address {1}.".format(change_amount, source_address)
         else:
-            withdrawal_amount = Decimal(withdrawal_amount).quantize(SATOSHI_PLACES)
-
-        if fee + withdrawal_amount > input_amount:
-            print "Error: fee + withdrawal amount greater than total amount available from unspent transactions"
-            raise Exception("Output values greater than input value")
-
-        change_amount = input_amount - withdrawal_amount - fee
-
-        # less than a satoshi due to weird floating point imprecision
-        if change_amount < 1e-8:
-            change_amount = 0
-
-        if change_amount > 0:
-            print "{0} being returned to cold storage address address {1}.".format(change_amount, source_address)
+            fee = input_amount - withdrawal_amount - change_amount
 
         addresses[dest_address] = str(withdrawal_amount)
         addresses[source_address] = str(change_amount)
@@ -816,11 +886,25 @@ def withdraw_interactive():
     #### Calculate Transaction ####
     print "\nCalculating transaction...\n"
 
-    unsigned_tx = create_unsigned_transaction(
-        source_address, addresses, redeem_script, txs)
+    if RE_SIGN_MODE is not 1:
+        unsigned_tx = create_unsigned_transaction(
+            source_address, addresses, redeem_script, input_txs)
 
-    signed_tx = sign_transaction(source_address, keys,
-                                 redeem_script, unsigned_tx, txs)
+        signed_tx = sign_transaction(source_address, keys,
+                                     redeem_script, unsigned_tx, input_txs)
+    else:
+        re_sign_input_txs = []
+        txid = tx["txid"]
+        for utxo in utxos:
+            re_sign_input_txs.append({
+                "txid": txid,
+                "vout": int(utxo["n"]),
+                "amount": utxo["value"],
+                "scriptPubKey": utxo["scriptPubKey"]["hex"],
+                "redeemScript": redeem_script
+            })
+        resign_args = "{0} '{1}' '{2}'".format(part_signed_hex_tx, json.dumps(re_sign_input_txs), json.dumps(keys))
+        signed_tx = json.loads(bitcoin_cli_call("signrawtransaction",resign_args))
 
     print "\nSufficient private keys to execute transaction?"
     print signed_tx["complete"]
@@ -845,7 +929,7 @@ def withdraw_interactive():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('program', choices=[
-                        'entropy', 'create-deposit-data', 'create-withdrawal-data','qr-code'])
+                        'entropy', 'create-deposit-data', 'create-withdrawal-data','sign-transaction','qr-code'])
 
     parser.add_argument("--num-keys", type=int,
                         help="The number of keys to create random entropy for", default=1)
@@ -882,6 +966,11 @@ if __name__ == "__main__":
         deposit_interactive(args.m, args.n, args.dice, args.rng)
 
     if args.program == "create-withdrawal-data":
+        withdraw_interactive()
+
+    if args.program == "sign-transaction":
+        # Sign an existing transaction (i.e. add a signature to partially signed tx) to withdaw funds from cold storage
+        RE_SIGN_MODE = 1
         withdraw_interactive()
 
     if args.program == "qr-code":
