@@ -20,6 +20,7 @@
 # - Bitcoin Core (http://bitcoincore.org)
 # - qrencode (QR code writer: http://packages.ubuntu.com/xenial/qrencode)
 # - zbarimg (QR code reader: http://packages.ubuntu.com/xenial/zbar-tools)
+# - veracrypt (encryption software: https://www.veracrypt.fr/en/Home.html)
 #
 ################################################################################################
 
@@ -46,6 +47,15 @@ VERBOSE_MODE = 0
 SINGLE_SAFETY_CONFIRM = 1
 #if SINGLE_SAFETY_CONFIRM set to 1 will suppress manually entering in "y" repeatedly for safety checklist (replaces with single confirmation)
 #repeated prompts like this aren't going to save anyone from catastrophe and make debugging/development laborious on repeated runs - if users need this for the safety items they have bigger problems on their hands
+
+USING_TAILS = 0
+# USING_TAILS is set to 1 if using the Tails operating system. used in setup function. toggled via CLI when -t flag supplied
+
+USING_VERACRYPT = 0
+# USING_VERACRYPT is set to 1 if using the veracrypt installer in setup function. toggled via CLI arguments (see argument parser section)
+# note that installing veracrypt is required only to create volumes, NOT for opening volumes (can just use cryptsetup)
+
+# note: tails/veracrypt global constants are defined below (just above related functions) to make referencing them easier in code audits. not put within related functions (i.e. kept global) in order to print values for CLI help
 
 ################################################################################################
 #
@@ -833,6 +843,128 @@ def withdraw_interactive():
 
     write_and_verify_qr_code("transaction", "transaction", signed_tx["hex"])
 
+################################################################################################
+#
+# install/setup & veracrypt functions
+#
+################################################################################################
+
+DEFAULT_TAILS_DEB_DIR = "/media/amnesia/apps/tails_apps"
+DEFAULT_TAILS_BTC_DIR = "/media/amnesia/apps/tails_apps/bitcoin-0.17.0"
+DEFAULT_TAILS_VERACRYPT_INSTALLER = "/media/amnesia/apps/tails_apps/veracrypt-1.23-setup/veracrypt-1.23-setup-gui-x64"
+# download from https://launchpad.net/veracrypt/trunk/1.23/+download/veracrypt-1.23-setup.tar.bz2
+
+def install_software(deb_dir,btc_dir,veracrypt):
+    # note: this is written/tested now only for tails
+    verbose("\ninstall function called w following directories/files:")
+    verbose("\n  deb package dir: {0}\n  bitcoin dir: {1}\n  veracrypt file: {2}".format(deb_dir,btc_dir,veracrypt))
+
+    # use 1 string for executing multiple sudo commands together (avoids multi prompts on tails)
+    cmds_string = ""
+
+    # need to validate paths to deb, btc, and veracrypt dirs/files
+    #   consider consolidation of following blocks into new function w multi calls
+    if deb_dir is None:
+        if os.path.isdir(DEFAULT_TAILS_DEB_DIR):
+            print "\nno debian application packages directory supplied but found exiting default application directory at {0} (will use this)".format(DEFAULT_TAILS_DEB_DIR)
+            deb_dir = DEFAULT_TAILS_DEB_DIR
+        else:
+            print "\nno debian application package directory supplied with --appdir flag and no app directory found at default path (must either supply --appdir flag or have apps existing in default path to run setup)"
+            sys.exit()
+    else:
+        if not os.path.isdir(deb_dir):
+            print "\ndebian package directory path supplied via command line not found (at {0})- please ensure this exists and retry...exiting".format(deb_dir)
+            sys.exit()
+        else:
+            print "\nusing supplied debian package path at {0}".format(deb_dir)
+
+    if btc_dir is None:
+        if os.path.isdir(DEFAULT_TAILS_BTC_DIR):
+            print "\nno bitcoin application directory supplied but found exiting default bitcoin application directory at {0} (will use this)".format(DEFAULT_TAILS_BTC_DIR)
+            btc_dir = DEFAULT_TAILS_BTC_DIR
+        else:
+            print "\nno bitcoin application directory path supplied with --btcdir flag, nor folder existing at default bitcoin application path at {0} (one of these required for setup)".format(DEFAULT_TAILS_BTC_DIR)
+            sys.exit()
+    else:
+        if not os.path.isdir(btc_dir):
+            print "\nbitcoin application path supplied via command line not found (at {0})- please ensure this exists and retry...exiting".format(btc_dir)
+            sys.exit()
+
+    if USING_VERACRYPT is 1:
+        # note: sometimes get a stranger error w "xmessage" popup when veracrypt gui installer launches - however does not appear to preclude normally installation
+        #   consider recoding for non-gui installer if available?
+        valid_veracrypt = 0
+        if veracrypt is not None:
+            if os.path.isfile(veracrypt):
+                valid_veracrypt = 1
+        if valid_veracrypt is 0:
+            if os.path.isfile(DEFAULT_TAILS_VERACRYPT_INSTALLER):
+                veracrypt = DEFAULT_TAILS_VERACRYPT_INSTALLER
+            else:
+                print "\nveracrypt installer doesn't exist at default location or custom path. please provide valid veracrypt path or place installer at default location ({0})".format(DEFAULT_TAILS_VERACRYPT_INSTALLER)
+                sys.exit()
+
+    cmds_string += "dpkg -i {0}/*.deb".format(deb_dir)
+    cmds_string += "; install -m 0755 -o root -g root -t /usr/local/bin {0}/bin/*".format(btc_dir)
+
+    print "\nabout to perform the following operations:"
+    print "  install debian packages from {0}".format(deb_dir)
+    print "  install bitcoin from {0}".format(btc_dir)
+
+    if USING_TAILS is 1:
+        print "  manually opening Tails port for bitcoind to locally listen on"
+        cmds_string += "; iptables -I OUTPUT -p tcp -d 127.0.0.1 --dport 8332 -m owner --uid-owner amnesia -j ACCEPT"
+        # note that without the above code bitcoin-cli commands will not work in tails
+
+    if USING_VERACRYPT is 1:
+        print "  running veracrypt gui installer from: {0}".format(veracrypt)
+        cmds_string += "; {0}".format(veracrypt)
+
+    # execute commands together to avoid many prompts in tails, after user verification
+    print "\n"
+    if not yes_no_interactive():
+        print "user not verifying setup parameters so aborting..."
+        sys.exit()
+    verbose("\nsetup is executing multiple sudo commands: {0}".format(cmds_string))
+    subprocess.call("sudo -- sh -c '{0}'".format(cmds_string), shell=True)
+
+DEFAULT_VERACRYPT_TAILS_VOL_NAME = "glaciervc"
+# DEFAULT_VERACRYPT_TAILS_VOL_NAME defines default mapper name for veracrypt file decryption. used in veracrypt open function
+DEFAULT_VERACRYPT_TAILS_VC_FILE_PATH = "/media/amnesia/apps/user_data/glacierVol.vc"
+# DEFAULT_VERACRYPT_TAILS_VC_FILE_PATH defines full default path to veracrypt file to decrypt/mount. used in veracrypt open function
+VERACRYPT_TAILS_MOUNT_DIR = "/media/amnesia/veracrypt-volumes"
+# VERACRYPT_TAILS_MOUNT_DIR defines the directory veracrypt volumes are mounted to when using veracrypt on tails. used in both veracrypt open & close functions
+
+def veracrypt_open_vol(vc_vol_path,vc_vol_name):
+    if vc_vol_path is None:
+        vc_vol_path = DEFAULT_VERACRYPT_TAILS_VC_FILE_PATH
+    if vc_vol_name is None:
+        vc_vol_name = DEFAULT_VERACRYPT_TAILS_VOL_NAME
+    print "\nwill attempt to mount veracrypt volume at {0} to {1}/{2}".format(vc_vol_path,VERACRYPT_TAILS_MOUNT_DIR,vc_vol_name)
+    if not yes_no_interactive():
+        print "\ndid not confirm veracrypt file/mount paths so exiting"
+        sys.exit()
+    if not os.path.exists(vc_vol_path):
+        print "\nno file exists at {0}".format(vc_vol_path)
+        sys.exit()
+    cmds_string = "cryptsetup --veracrypt open --type tcrypt {0} {1}".format(vc_vol_path,vc_vol_name)
+    cmds_string +="; mkdir -p {0}/{1}".format(VERACRYPT_TAILS_MOUNT_DIR,vc_vol_name)
+    cmds_string +="; mount -o uid=1000,gid=1000 /dev/mapper/{0} {1}/{2}".format(vc_vol_name,VERACRYPT_TAILS_MOUNT_DIR,vc_vol_name)
+    try:
+        subprocess.call("sudo -- sh -c '{0}'".format(cmds_string), shell=True)
+    except:
+        print "\nerror while attempting to open/mount veracrypt volume"
+
+def veracrypt_close_vol(vc_vol_name):
+    if vc_vol_name is None:
+        vc_vol_name = DEFAULT_VERACRYPT_TAILS_VOL_NAME
+    # additional verification and error-catching should be written here (e.g. if volume not mounted at given location)
+    cmd = "sudo umount {0}/{1}".format(VERACRYPT_TAILS_MOUNT_DIR,vc_vol_name)
+    verbose("\nabout to execute following cmd: \n{0}\n".format(cmd))
+    try:
+        subprocess.call(cmd, shell=True)
+    except:
+        print "\nerror while attempting to close veracrypt volume"
 
 ################################################################################################
 #
@@ -845,8 +977,7 @@ def withdraw_interactive():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('program', choices=[
-                        'entropy', 'create-deposit-data', 'create-withdrawal-data','qr-code'])
-
+                        'setup', 'entropy', 'create-deposit-data', 'create-withdrawal-data','qr-code', 'veracrypt-open', 'veracrypt-close'])
     parser.add_argument("--num-keys", type=int,
                         help="The number of keys to create random entropy for", default=1)
     parser.add_argument("-d", "--dice", type=int,
@@ -859,6 +990,29 @@ if __name__ == "__main__":
         "-n", type=int, help="Number of total keys required in an m-of-n multisig address creation (default m-of-n = 1-of-2)", default=2)
     parser.add_argument('--testnet', type=int, help=argparse.SUPPRESS)
     parser.add_argument("-q", "--qrdata", help="Data to be encoded into qr-code")
+    parser.add_argument('-t', action='store_const',
+                        default=0,
+                        dest='USING_TAILS',
+                        const=1,
+                        help='indicate using tails operating system - used in setup for deb package loading & configuring bitcoind start (on tails need manual bitcoind port opening for bitcoin-cli calls)')
+    parser.add_argument("--appdir",
+                        help="for setup function: path to debian application packages to install. default tails location: {0}".format(DEFAULT_TAILS_DEB_DIR))
+    parser.add_argument("--btcdir",
+                        help="for setup function: path to untarred bitcoin application directory (for local install of bitcoin binaries). default tails location: {0}".format(DEFAULT_TAILS_BTC_DIR))
+    parser.add_argument("--veracrypt", action='store_const',
+                        default=0,
+                        dest='USING_VERACRYPT',
+                        const=1,
+                        help="for setup function: run veracrypt gui installer if set to 1")
+    parser.add_argument("--veracrypt-dir",
+                        dest='veracrypt_dir',
+                        help="for setup function: path to untarred veracrypt setup file if using veracrypt. default tails location: {0}".format(DEFAULT_TAILS_VERACRYPT_INSTALLER))
+    parser.add_argument("--vc-path",
+                        dest='vc_vol_path',
+                        help="for use with veracrypt-open - path to existing veracrypt volume (to be opened) in non-default location. optional - if not provided default path of {0}".format(DEFAULT_VERACRYPT_TAILS_VC_FILE_PATH))
+    parser.add_argument("--vc-name",
+                        dest='vc_vol_name',
+                        help="for use with veracrypt-open & veracrypt-close - mapper name to give veracrypt volume (will be mounted with this). optional - if not provided default name of {0}".format(DEFAULT_VERACRYPT_TAILS_VOL_NAME))
     parser.add_argument('-v', action='store_const',
                         default=0,
                         dest='VERBOSE_MODE',
@@ -868,12 +1022,17 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     VERBOSE_MODE = args.VERBOSE_MODE
+    USING_TAILS = args.USING_TAILS
+    USING_VERACRYPT = args.USING_VERACRYPT
 
     global bitcoind, bitcoin_cli, wif_prefix
     cli_args = "-testnet -rpcport={} -datadir=bitcoin-test-data ".format(args.testnet) if args.testnet else ""
     wif_prefix = "EF" if args.testnet else "80"
     bitcoind = "bitcoind " + cli_args
     bitcoin_cli = "bitcoin-cli " + cli_args
+
+    if args.program == "setup":
+        install_software(args.appdir,args.btcdir,args.veracrypt_dir)
 
     if args.program == "entropy":
         entropy(args.num_keys, args.rng)
@@ -886,3 +1045,9 @@ if __name__ == "__main__":
 
     if args.program == "qr-code":
         write_and_verify_qr_code("qrcode", "qrcode", args.qrdata)
+
+    if args.program == "veracrypt-open":
+        veracrypt_open_vol(args.vc_vol_path,args.vc_vol_name)
+
+    if args.program == "veracrypt-close":
+        veracrypt_close_vol(args.vc_vol_name)
