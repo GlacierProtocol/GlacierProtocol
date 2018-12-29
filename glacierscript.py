@@ -3,15 +3,15 @@
 ################################################################################################
 #
 # GlacierScript:  Part of the Glacier Protocol (http://glacierprotocol.org)
-# 
-# GlacierScript is designed specifically for use in the context of executing the broader Glacier 
+#
+# GlacierScript is designed specifically for use in the context of executing the broader Glacier
 # Protocol, a step-by-step procedure for high-security cold storage of Bitcoin.  It is not
 # intended to be used as standalone software.
 #
 # GlacierScript primarily replaces tasks that users would otherwise be doing manually, such as
-# typing things on the command line, copying-and-pasting strings, and hand-editing JSON.  It 
-# mostly consists of print statements, user input, string & JSON manipulation, and command-line 
-# wrappers around Bitcoin Core and other applications (e.g. those involved in reading and writing 
+# typing things on the command line, copying-and-pasting strings, and hand-editing JSON.  It
+# mostly consists of print statements, user input, string & JSON manipulation, and command-line
+# wrappers around Bitcoin Core and other applications (e.g. those involved in reading and writing
 # QR codes.)
 #
 # GlacierScript avoids cryptographic and other security-sensitive operations as much as possible.
@@ -62,7 +62,7 @@ def hash_md5(s):
 
 
 def satoshi_to_btc(satoshi):
-    """ 
+    """
     Converts a value in satoshi to a value in BTC
     outputs => Decimal
 
@@ -73,11 +73,11 @@ def satoshi_to_btc(satoshi):
 
 
 def btc_to_satoshi(btc):
-    """ 
+    """
     Converts a value in BTC to satoshi
     outputs => <int>
 
-    btc: <Decimal> or <Float> 
+    btc: <Decimal> or <Float>
     """
     value = btc * 100000000
     return int(value)
@@ -216,7 +216,7 @@ def xor_hex_strings(str1, str2):
 
 
 def hex_private_key_to_WIF_private_key(hex_key):
-    """ 
+    """
     Converts a raw 256-bit hex private key to WIF format
     returns => <string> in hex format
     """
@@ -256,14 +256,14 @@ def ensure_bitcoind_running():
     # 2. Remove this -deprecatedrpc=signrawtransaction
     # 3. Change getaddressesbyaccount to getaddressesbylabel
     # 4. Remove this -deprecatedrpc=accounts
-    subprocess.call(bitcoind + "-daemon -connect=0.0.0.0 -deprecatedrpc=signrawtransaction -deprecatedrpc=accounts",
+    subprocess.call(bitcoind + " -daemon -connect=0.0.0.0 -deprecatedrpc=signrawtransaction -deprecatedrpc=accounts",
                     shell=True, stdout=devnull, stderr=devnull)
 
     # verify bitcoind started up and is functioning correctly
     times = 0
     while times <= 20:
         times += 1
-        if subprocess.call(bitcoin_cli + "getnetworkinfo", shell=True, stdout=devnull, stderr=devnull) == 0:
+        if subprocess.call(bitcoin_cli + " getnetworkinfo", shell=True, stdout=devnull, stderr=devnull) == 0:
             return
         time.sleep(0.5)
 
@@ -274,7 +274,7 @@ def require_minimum_bitcoind_version(min_version):
     Fail if the bitcoind version in use is older than required
     <min_version> - required minimum version in format of getnetworkinfo, i.e. 150100 for v0.15.1
     """
-    networkinfo_str = subprocess.check_output(bitcoin_cli + "getnetworkinfo", shell=True)
+    networkinfo_str = subprocess.check_output(bitcoin_cli + " getnetworkinfo", shell=True)
     networkinfo = json.loads(networkinfo_str)
 
     if int(networkinfo["version"]) < min_version:
@@ -296,9 +296,8 @@ def get_address_for_wif_privkey(privkey):
 
     ensure_bitcoind_running()
     subprocess.call(
-        bitcoin_cli + "importprivkey {0} {1}".format(privkey, account_number), shell=True)
-    addresses = subprocess.check_output(
-        bitcoin_cli + "getaddressesbyaccount {0}".format(account_number), shell=True)
+        bitcoin_cli + " importprivkey {0} {1}".format(privkey, account_number), shell=True)
+    addresses = bitcoin_cli_call("getaddressesbyaccount", account_number)
 
     # extract address from JSON output
     addresses_json = json.loads(addresses)
@@ -317,11 +316,10 @@ def addmultisigaddress(m, addresses_or_pubkeys, address_type='p2sh-segwit'):
     require_minimum_bitcoind_version(160000) # addmultisigaddress API changed in v0.16.0
     address_string = json.dumps(addresses_or_pubkeys)
     argstring = "{0} '{1}' '' '{2}'".format(m, address_string, address_type)
-    return json.loads(subprocess.check_output(
-        bitcoin_cli + "addmultisigaddress {0}".format(argstring), shell=True))
+    return json.loads(bitcoin_cli_call("addmultisigaddress", argstring))
 
 def get_utxos(tx, address):
-    """ 
+    """
     Given a transaction, find all the outputs that were sent to an address
     returns => List<Dictionary> list of UTXOs in bitcoin core format
 
@@ -341,6 +339,12 @@ def get_utxos(tx, address):
 
     return utxos
 
+def bitcoin_cli_call(cmd, args):
+    full_cmd = "{0} {1} {2}".format(bitcoin_cli, cmd, args)
+    # note: previously space after bitcoind call was in bitcoin_cli, bitcoind, & related args variables - this removed and placed here (and cli/d calls outside of this fn had spaces added)
+    # excluded from this function: network checking & private key importation w bitcoind AND bitcoin_cli calls in functions: ensure_bitcoind_running, require_minimum_bitcoind_version, and get_address_for_wif_prikey - reasons: bitcoind call (instead of bitcoin_cli), subprocess.call (instead of subprocess.checkoutput), additional subprocess shell parameters, no additional arguments
+    cmd_output = subprocess.check_output(full_cmd, shell=True)
+    return cmd_output
 
 def create_unsigned_transaction(source_address, destinations, redeem_script, input_txs):
     """
@@ -374,8 +378,7 @@ def create_unsigned_transaction(source_address, destinations, redeem_script, inp
     argstring = "'{0}' '{1}'".format(
         json.dumps(inputs), json.dumps(destinations))
 
-    tx_unsigned_hex = subprocess.check_output(
-        bitcoin_cli + "createrawtransaction {0}".format(argstring), shell=True).strip()
+    tx_unsigned_hex = bitcoin_cli_call("createrawtransaction", argstring).strip()
 
     return tx_unsigned_hex
 
@@ -387,7 +390,7 @@ def sign_transaction(source_address, keys, redeem_script, unsigned_hex, input_tx
 
     source_address: <string> input_txs will be filtered for utxos to this source address
     keys: List<string> The private keys you wish to sign with
-    redeem_script: <string> 
+    redeem_script: <string>
     unsigned_hex: <string> The unsigned transaction, in hex format
     input_txs: List<dict> A list of input transactions to use (bitcoind decoded format)
     """
@@ -409,17 +412,16 @@ def sign_transaction(source_address, keys, redeem_script, unsigned_hex, input_tx
 
     argstring_2 = "{0} '{1}' '{2}'".format(
         unsigned_hex, json.dumps(inputs), json.dumps(keys))
-    signed_hex = subprocess.check_output(
-        bitcoin_cli + "signrawtransaction {0}".format(argstring_2), shell=True).strip()
+    signed_hex = bitcoin_cli_call("signrawtransaction", argstring_2).strip()
 
     signed_tx = json.loads(signed_hex)
     return signed_tx
 
 
 def get_fee_interactive(source_address, keys, destinations, redeem_script, input_txs):
-    """ 
+    """
     Returns a recommended transaction fee, given market fee data provided by the user interactively
-    Because fees tend to be a function of transaction size, we build the transaction in order to 
+    Because fees tend to be a function of transaction size, we build the transaction in order to
     recomend a fee.
     return => <Decimal> fee value
 
@@ -447,8 +449,7 @@ def get_fee_interactive(source_address, keys, destinations, redeem_script, input
         signed_tx = sign_transaction(source_address, keys,
                                      redeem_script, unsigned_tx, input_txs)
 
-        decoded_tx = json.loads(subprocess.check_output(
-                bitcoin_cli + "decoderawtransaction {0}".format(signed_tx["hex"]), shell=True))
+        decoded_tx = json.loads(bitcoin_cli_call("decoderawtransaction", signed_tx["hex"]))
         size = decoded_tx["vsize"]
 
         fee = size * fee_basis_satoshis_per_byte
@@ -475,7 +476,7 @@ def get_fee_interactive(source_address, keys, destinations, redeem_script, input
 ################################################################################################
 
 def write_and_verify_qr_code(name, filename, data):
-    """ 
+    """
     Write a QR code and then read it back to try and detect any tricksy malware tampering with it.
 
     name: <string> short description of the data
@@ -497,7 +498,7 @@ def write_and_verify_qr_code(name, filename, data):
 
 ################################################################################################
 #
-# User sanity checking 
+# User sanity checking
 #
 ################################################################################################
 
@@ -548,7 +549,7 @@ def unchunk(string):
 
 
 def format_chunks(size, string):
-    """ 
+    """
     Splits a string into chunks of [size] characters, for easy human readability
     """
     tail = ""
@@ -687,8 +688,7 @@ def withdraw_interactive():
             if os.path.isfile(hex_tx):
                 hex_tx = open(hex_tx).read().strip()
 
-            tx = json.loads(subprocess.check_output(
-                bitcoin_cli + "decoderawtransaction {0}".format(hex_tx), shell=True))
+            tx = json.loads(bitcoin_cli_call("decoderawtransaction", hex_tx))
             txs.append(tx)
             utxos += get_utxos(tx, source_address)
 
@@ -821,10 +821,10 @@ if __name__ == "__main__":
 
 
     global bitcoind, bitcoin_cli, wif_prefix
-    cli_args = "-testnet -rpcport={} -datadir=bitcoin-test-data ".format(args.testnet) if args.testnet else ""
+    cli_args = " -testnet -rpcport={} -datadir=bitcoin-test-data".format(args.testnet) if args.testnet else ""
     wif_prefix = "EF" if args.testnet else "80"
-    bitcoind = "bitcoind " + cli_args
-    bitcoin_cli = "bitcoin-cli " + cli_args
+    bitcoind = "bitcoind" + cli_args
+    bitcoin_cli = "bitcoin-cli" + cli_args
 
     if args.program == "entropy":
         entropy(args.num_keys, args.rng)
