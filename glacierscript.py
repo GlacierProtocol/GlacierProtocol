@@ -390,8 +390,7 @@ def create_unsigned_transaction(source_address, destinations, redeem_script, inp
     argstring = "'{0}' '{1}'".format(
         json.dumps(inputs), json.dumps(destinations))
 
-    tx_unsigned_hex = subprocess.check_output(
-        bitcoin_cli + "createrawtransaction {0}".format(argstring), shell=True).strip()
+    tx_unsigned_hex = bitcoin_cli_call("createrawtransaction", argstring).strip()
 
     return tx_unsigned_hex
 
