@@ -295,8 +295,7 @@ def get_address_for_wif_privkey(privkey):
 
     ensure_bitcoind_running()
     bitcoin_cli_call("importprivkey", "{0} {1}".format(privkey, account_number), call_type=1)
-    addresses = subprocess.check_output(
-        bitcoin_cli + "getaddressesbyaccount {0}".format(account_number), shell=True)
+    addresses = bitcoin_cli_call("getaddressesbyaccount", account_number)
 
     # extract address from JSON output
     addresses_json = json.loads(addresses)
