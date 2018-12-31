@@ -314,8 +314,7 @@ def addmultisigaddress(m, addresses_or_pubkeys, address_type='p2sh-segwit'):
     require_minimum_bitcoind_version(160000) # addmultisigaddress API changed in v0.16.0
     address_string = json.dumps(addresses_or_pubkeys)
     argstring = "{0} '{1}' '' '{2}'".format(m, address_string, address_type)
-    return json.loads(subprocess.check_output(
-        bitcoin_cli + "addmultisigaddress {0}".format(argstring), shell=True))
+    return json.loads(bitcoin_cli_call("addmultisigaddress", argstring))
 
 def get_utxos(tx, address):
     """
