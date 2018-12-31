@@ -294,8 +294,7 @@ def get_address_for_wif_privkey(privkey):
     account_number = random.randint(0, 2**128)
 
     ensure_bitcoind_running()
-    subprocess.call(
-        bitcoin_cli + "importprivkey {0} {1}".format(privkey, account_number), shell=True)
+    bitcoin_cli_call("importprivkey", "{0} {1}".format(privkey, account_number), call_type=1)
     addresses = subprocess.check_output(
         bitcoin_cli + "getaddressesbyaccount {0}".format(account_number), shell=True)
 
