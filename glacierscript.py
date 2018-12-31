@@ -273,7 +273,7 @@ def require_minimum_bitcoind_version(min_version):
     Fail if the bitcoind version in use is older than required
     <min_version> - required minimum version in format of getnetworkinfo, i.e. 150100 for v0.15.1
     """
-    networkinfo_str = subprocess.check_output(bitcoin_cli + "getnetworkinfo", shell=True)
+    networkinfo_str = bitcoin_cli_call("getnetworkinfo","")
     networkinfo = json.loads(networkinfo_str)
 
     if int(networkinfo["version"]) < min_version:
