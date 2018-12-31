@@ -424,8 +424,7 @@ def sign_transaction(source_address, keys, redeem_script, unsigned_hex, input_tx
 
     argstring_2 = "{0} '{1}' '{2}'".format(
         unsigned_hex, json.dumps(inputs), json.dumps(keys))
-    signed_hex = subprocess.check_output(
-        bitcoin_cli + "signrawtransaction {0}".format(argstring_2), shell=True).strip()
+    signed_hex = bitcoin_cli_call("signrawtransaction", argstring_2).strip()
 
     signed_tx = json.loads(signed_hex)
     return signed_tx
