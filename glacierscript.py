@@ -3,15 +3,15 @@
 ################################################################################################
 #
 # GlacierScript:  Part of the Glacier Protocol (http://glacierprotocol.org)
-# 
-# GlacierScript is designed specifically for use in the context of executing the broader Glacier 
+#
+# GlacierScript is designed specifically for use in the context of executing the broader Glacier
 # Protocol, a step-by-step procedure for high-security cold storage of Bitcoin.  It is not
 # intended to be used as standalone software.
 #
 # GlacierScript primarily replaces tasks that users would otherwise be doing manually, such as
-# typing things on the command line, copying-and-pasting strings, and hand-editing JSON.  It 
-# mostly consists of print statements, user input, string & JSON manipulation, and command-line 
-# wrappers around Bitcoin Core and other applications (e.g. those involved in reading and writing 
+# typing things on the command line, copying-and-pasting strings, and hand-editing JSON.  It
+# mostly consists of print statements, user input, string & JSON manipulation, and command-line
+# wrappers around Bitcoin Core and other applications (e.g. those involved in reading and writing
 # QR codes.)
 #
 # GlacierScript avoids cryptographic and other security-sensitive operations as much as possible.
@@ -62,7 +62,7 @@ def hash_md5(s):
 
 
 def satoshi_to_btc(satoshi):
-    """ 
+    """
     Converts a value in satoshi to a value in BTC
     outputs => Decimal
 
@@ -73,11 +73,11 @@ def satoshi_to_btc(satoshi):
 
 
 def btc_to_satoshi(btc):
-    """ 
+    """
     Converts a value in BTC to satoshi
     outputs => <int>
 
-    btc: <Decimal> or <Float> 
+    btc: <Decimal> or <Float>
     """
     value = btc * 100000000
     return int(value)
@@ -216,7 +216,7 @@ def xor_hex_strings(str1, str2):
 
 
 def hex_private_key_to_WIF_private_key(hex_key):
-    """ 
+    """
     Converts a raw 256-bit hex private key to WIF format
     returns => <string> in hex format
     """
@@ -321,7 +321,7 @@ def addmultisigaddress(m, addresses_or_pubkeys, address_type='p2sh-segwit'):
         bitcoin_cli + "addmultisigaddress {0}".format(argstring), shell=True))
 
 def get_utxos(tx, address):
-    """ 
+    """
     Given a transaction, find all the outputs that were sent to an address
     returns => List<Dictionary> list of UTXOs in bitcoin core format
 
@@ -387,7 +387,7 @@ def sign_transaction(source_address, keys, redeem_script, unsigned_hex, input_tx
 
     source_address: <string> input_txs will be filtered for utxos to this source address
     keys: List<string> The private keys you wish to sign with
-    redeem_script: <string> 
+    redeem_script: <string>
     unsigned_hex: <string> The unsigned transaction, in hex format
     input_txs: List<dict> A list of input transactions to use (bitcoind decoded format)
     """
@@ -417,9 +417,9 @@ def sign_transaction(source_address, keys, redeem_script, unsigned_hex, input_tx
 
 
 def get_fee_interactive(source_address, keys, destinations, redeem_script, input_txs):
-    """ 
+    """
     Returns a recommended transaction fee, given market fee data provided by the user interactively
-    Because fees tend to be a function of transaction size, we build the transaction in order to 
+    Because fees tend to be a function of transaction size, we build the transaction in order to
     recomend a fee.
     return => <Decimal> fee value
 
@@ -475,7 +475,7 @@ def get_fee_interactive(source_address, keys, destinations, redeem_script, input
 ################################################################################################
 
 def write_and_verify_qr_code(name, filename, data):
-    """ 
+    """
     Write a QR code and then read it back to try and detect any tricksy malware tampering with it.
 
     name: <string> short description of the data
@@ -497,7 +497,7 @@ def write_and_verify_qr_code(name, filename, data):
 
 ################################################################################################
 #
-# User sanity checking 
+# User sanity checking
 #
 ################################################################################################
 
@@ -548,7 +548,7 @@ def unchunk(string):
 
 
 def format_chunks(size, string):
-    """ 
+    """
     Splits a string into chunks of [size] characters, for easy human readability
     """
     tail = ""
