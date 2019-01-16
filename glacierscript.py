@@ -112,7 +112,7 @@ def run_subprocess(sub_func, exe, cmd, args, silent):
     return cmd_output
 
 
-def bitcoin_cli_call(cmd="", args="", silent=False):
+def bitcoin_cli_call(cmd, args="", silent=False):
     """
     Run `bitcoin-cli` using subprocess.call
     """
