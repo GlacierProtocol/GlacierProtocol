@@ -85,6 +85,53 @@ def btc_to_satoshi(btc):
 
 ################################################################################################
 #
+# Subprocess helper functions
+#
+################################################################################################
+
+def run_subprocess(sub_func, exe, cmd, args, silent=False):
+    """
+    Run a subprocess (bitcoind or bitcoin-cli)
+    Returns => return value of subprocess.call() or subprocess.check_output()
+
+    sub_func: which of {subprocess.call, subprocess.check_output} to run
+    exe: executable file name (e.g. bitcoin-cli)
+    cmd: subcommand (e.g. decodetransaction)
+    args: arguments to subcommand
+    silent: if True, redirect stdout & stderr to /dev/null
+    """
+    if cmd is not "": cmd = " {0}".format(cmd)
+    if args is not "": args = " {0}".format(args)
+    full_cmd = "{0}{1}{2}".format(exe, cmd, args)
+    subprocess_args = { 'shell': True }
+    devnull = None
+    if silent:
+        devnull = open("/dev/null")
+        subprocess_args.update({ 'stdout': devnull, 'stderr': devnull })
+    cmd_output = sub_func(full_cmd, **subprocess_args)
+    if devnull:
+        devnull.close()
+    return cmd_output
+
+
+def bitcoin_cli_call(cmd="", args="", **optargs):
+    return run_subprocess(subprocess.call, bitcoin_cli, cmd, args, **optargs)
+
+
+def bitcoin_cli_checkoutput(cmd="", args="", **optargs):
+    return run_subprocess(subprocess.check_output, bitcoin_cli, cmd, args, **optargs)
+
+
+def bitcoin_cli_json(cmd="", args="", **optargs):
+    return json.loads(bitcoin_cli_checkoutput(cmd, args, **optargs))
+
+
+def bitcoind_call(cmd="", args="", **optargs):
+    return run_subprocess(subprocess.call, bitcoind, cmd, args, **optargs)
+
+
+################################################################################################
+#
 # Read & validate random data from the user
 #
 ################################################################################################
@@ -330,42 +377,6 @@ def get_utxos(tx, address):
             utxos.append(output)
 
     return utxos
-
-def run_subprocess(sub_func, exe, cmd, args, silent=False):
-    """
-    Run a subprocess (bitcoind or bitcoin-cli)
-    Returns => return value of subprocess.call() or subprocess.check_output()
-
-    sub_func: which of {subprocess.call, subprocess.check_output} to run
-    exe: executable file name (e.g. bitcoin-cli)
-    cmd: subcommand (e.g. decodetransaction)
-    args: arguments to subcommand
-    silent: if True, redirect stdout & stderr to /dev/null
-    """
-    if cmd is not "": cmd = " {0}".format(cmd)
-    if args is not "": args = " {0}".format(args)
-    full_cmd = "{0}{1}{2}".format(exe, cmd, args)
-    subprocess_args = { 'shell': True }
-    devnull = None
-    if silent:
-        devnull = open("/dev/null")
-        subprocess_args.update({ 'stdout': devnull, 'stderr': devnull })
-    cmd_output = sub_func(full_cmd, **subprocess_args)
-    if devnull:
-        devnull.close()
-    return cmd_output
-
-def bitcoin_cli_call(cmd="", args="", **optargs):
-    return run_subprocess(subprocess.call, bitcoin_cli, cmd, args, **optargs)
-
-def bitcoin_cli_checkoutput(cmd="", args="", **optargs):
-    return run_subprocess(subprocess.check_output, bitcoin_cli, cmd, args, **optargs)
-
-def bitcoin_cli_json(cmd="", args="", **optargs):
-    return json.loads(bitcoin_cli_checkoutput(cmd, args, **optargs))
-
-def bitcoind_call(cmd="", args="", **optargs):
-    return run_subprocess(subprocess.call, bitcoind, cmd, args, **optargs)
 
 def create_unsigned_transaction(source_address, destinations, redeem_script, input_txs):
     """
