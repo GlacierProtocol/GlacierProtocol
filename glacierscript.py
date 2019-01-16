@@ -135,11 +135,11 @@ def bitcoin_cli_json(cmd="", args="", **optargs):
     return json.loads(bitcoin_cli_checkoutput(cmd, args, **optargs))
 
 
-def bitcoind_call(cmd="", args="", **optargs):
+def bitcoind_call(args="", **optargs):
     """
     Run `bitcoind` using subprocess.call
     """
-    return run_subprocess(subprocess.call, bitcoind, cmd, args, **optargs)
+    return run_subprocess(subprocess.call, bitcoind, "", args, **optargs)
 
 
 ################################################################################################
@@ -313,7 +313,7 @@ def ensure_bitcoind_running():
     # 2. Remove this -deprecatedrpc=signrawtransaction
     # 3. Change getaddressesbyaccount to getaddressesbylabel
     # 4. Remove this -deprecatedrpc=accounts
-    bitcoind_call("","-daemon -connect=0.0.0.0 -deprecatedrpc=signrawtransaction -deprecatedrpc=accounts", silent=True)
+    bitcoind_call("-daemon -connect=0.0.0.0 -deprecatedrpc=signrawtransaction -deprecatedrpc=accounts", silent=True)
 
     # verify bitcoind started up and is functioning correctly
     times = 0
