@@ -335,12 +335,14 @@ def get_utxos(tx, address):
 
     return utxos
 
-def run_subprocess(exe, cmd, args, silent=False, **optargs):
+def run_subprocess(sub_func, exe, cmd, args, silent=False, **optargs):
     # all bitcoind & bitcoin-cli calls to go through this function
+    #  sub_func: which of {subprocess.call, subprocess.check_output} to run
+    #  exe: executable file name (e.g. bitcoin-cli)
+    #  cmd: subcommand (e.g. decodetransaction)
+    #  args: arguments to subcommand
     #  silent: if True, redirect stdout & stderr to /dev/null
-    # optargs parsing:
-    #  call_type: if 1 use subprocess.call instead of .checkoutput
-    # defaults paramters: bitcoin_cli, subprocess.check_output, shell=True
+    # default parameters: shell=True
     if cmd is not "": cmd = " {0}".format(cmd)
     if args is not "": args = " {0}".format(args)
     full_cmd = "{0}{1}{2}".format(exe, cmd, args)
@@ -349,22 +351,19 @@ def run_subprocess(exe, cmd, args, silent=False, **optargs):
     if silent:
         devnull = open("/dev/null")
         subprocess_args.update({ 'stdout': devnull, 'stderr': devnull })
-    if optargs.get('call_type', None) is 1:
-        cmd_output = subprocess.call(full_cmd, **subprocess_args)
-    else:
-        cmd_output = subprocess.check_output(full_cmd, **subprocess_args)
+    cmd_output = sub_func(full_cmd, **subprocess_args)
     if devnull:
         devnull.close()
     return cmd_output
 
 def bitcoin_cli_call(cmd="", args="", **optargs):
-    return run_subprocess(bitcoin_cli, cmd, args, call_type=1, **optargs)
+    return run_subprocess(subprocess.call, bitcoin_cli, cmd, args, call_type=1, **optargs)
 
 def bitcoin_cli_checkoutput(cmd="", args="", **optargs):
-    return run_subprocess(bitcoin_cli, cmd, args, call_type=0, **optargs)
+    return run_subprocess(subprocess.check_output, bitcoin_cli, cmd, args, call_type=0, **optargs)
 
 def bitcoind_call(cmd="", args="", **optargs):
-    return run_subprocess(bitcoind, cmd, args, call_type=1, **optargs)
+    return run_subprocess(subprocess.call, bitcoind, cmd, args, call_type=1, **optargs)
 
 def create_unsigned_transaction(source_address, destinations, redeem_script, input_txs):
     """
