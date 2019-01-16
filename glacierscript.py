@@ -430,7 +430,7 @@ def sign_transaction(source_address, keys, redeem_script, unsigned_hex, input_tx
 
     argstring_2 = "{0} '{1}' '{2}'".format(
         unsigned_hex, json.dumps(inputs), json.dumps(keys))
-    signed_tx = json.loads(bitcoin_cli_checkoutput("signrawtransaction", argstring_2).strip())
+    signed_tx = json.loads(bitcoin_cli_checkoutput("signrawtransaction", argstring_2))
     return signed_tx
 
 
