@@ -133,7 +133,7 @@ def bitcoin_cli_json(cmd, args=""):
     return json.loads(bitcoin_cli_checkoutput(cmd, args))
 
 
-def bitcoind_call(args="", silent=False):
+def bitcoind_call(args, silent=False):
     """
     Run `bitcoind` using subprocess.call
     """
