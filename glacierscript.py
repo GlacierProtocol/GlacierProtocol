@@ -271,7 +271,7 @@ def require_minimum_bitcoind_version(min_version):
     Fail if the bitcoind version in use is older than required
     <min_version> - required minimum version in format of getnetworkinfo, i.e. 150100 for v0.15.1
     """
-    networkinfo = json.loads(bitcoin_cli_checkoutput("getnetworkinfo"))
+    networkinfo = bitcoin_cli_json("getnetworkinfo")
 
     if int(networkinfo["version"]) < min_version:
         print "ERROR: Your bitcoind version is too old. You have {}, I need {} or newer. Exiting...".format(networkinfo["version"], min_version)
@@ -292,7 +292,7 @@ def get_address_for_wif_privkey(privkey):
 
     ensure_bitcoind_running()
     bitcoin_cli_call("importprivkey", "{0} {1}".format(privkey, account_number))
-    addresses = json.loads(bitcoin_cli_checkoutput("getaddressesbyaccount", account_number))
+    addresses = bitcoin_cli_json("getaddressesbyaccount", account_number)
     return addresses[0]
 
 
@@ -308,7 +308,7 @@ def addmultisigaddress(m, addresses_or_pubkeys, address_type='p2sh-segwit'):
     require_minimum_bitcoind_version(160000) # addmultisigaddress API changed in v0.16.0
     address_string = json.dumps(addresses_or_pubkeys)
     argstring = "{0} '{1}' '' '{2}'".format(m, address_string, address_type)
-    return json.loads(bitcoin_cli_checkoutput("addmultisigaddress", argstring))
+    return bitcoin_cli_json("addmultisigaddress", argstring)
 
 def get_utxos(tx, address):
     """
@@ -360,6 +360,9 @@ def bitcoin_cli_call(cmd="", args="", **optargs):
 
 def bitcoin_cli_checkoutput(cmd="", args="", **optargs):
     return run_subprocess(subprocess.check_output, bitcoin_cli, cmd, args, **optargs)
+
+def bitcoin_cli_json(cmd="", args="", **optargs):
+    return json.loads(bitcoin_cli_checkoutput(cmd, args, **optargs))
 
 def bitcoind_call(cmd="", args="", **optargs):
     return run_subprocess(subprocess.call, bitcoind, cmd, args, **optargs)
@@ -430,7 +433,7 @@ def sign_transaction(source_address, keys, redeem_script, unsigned_hex, input_tx
 
     argstring_2 = "{0} '{1}' '{2}'".format(
         unsigned_hex, json.dumps(inputs), json.dumps(keys))
-    signed_tx = json.loads(bitcoin_cli_checkoutput("signrawtransaction", argstring_2))
+    signed_tx = bitcoin_cli_json("signrawtransaction", argstring_2)
     return signed_tx
 
 
@@ -465,7 +468,7 @@ def get_fee_interactive(source_address, keys, destinations, redeem_script, input
         signed_tx = sign_transaction(source_address, keys,
                                      redeem_script, unsigned_tx, input_txs)
 
-        decoded_tx = json.loads(bitcoin_cli_checkoutput("decoderawtransaction", signed_tx["hex"]))
+        decoded_tx = bitcoin_cli_json("decoderawtransaction", signed_tx["hex"])
         size = decoded_tx["vsize"]
 
         fee = size * fee_basis_satoshis_per_byte
@@ -704,7 +707,7 @@ def withdraw_interactive():
             if os.path.isfile(hex_tx):
                 hex_tx = open(hex_tx).read().strip()
 
-            tx = json.loads(bitcoin_cli_checkoutput("decoderawtransaction", hex_tx))
+            tx = bitcoin_cli_json("decoderawtransaction", hex_tx)
             txs.append(tx)
             utxos += get_utxos(tx, source_address)
 
