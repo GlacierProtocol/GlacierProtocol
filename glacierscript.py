@@ -100,9 +100,7 @@ def run_subprocess(sub_func, exe, cmd, args, silent):
     args: arguments to subcommand
     silent: if True, redirect stdout & stderr to /dev/null
     """
-    if cmd is not "": cmd = " {0}".format(cmd)
-    if args is not "": args = " {0}".format(args)
-    full_cmd = "{0}{1}{2}".format(exe, cmd, args)
+    full_cmd = "{0} {1} {2}".format(exe, cmd, args)
     subprocess_args = { 'shell': True }
     devnull = None
     if silent:
