@@ -360,13 +360,13 @@ def run_subprocess(sub_func, exe, cmd, args, silent=False, **optargs):
     return cmd_output
 
 def bitcoin_cli_call(cmd="", args="", **optargs):
-    return run_subprocess(subprocess.call, bitcoin_cli, cmd, args, call_type=1, **optargs)
+    return run_subprocess(subprocess.call, bitcoin_cli, cmd, args, **optargs)
 
 def bitcoin_cli_checkoutput(cmd="", args="", **optargs):
-    return run_subprocess(subprocess.check_output, bitcoin_cli, cmd, args, call_type=0, **optargs)
+    return run_subprocess(subprocess.check_output, bitcoin_cli, cmd, args, **optargs)
 
 def bitcoind_call(cmd="", args="", **optargs):
-    return run_subprocess(subprocess.call, bitcoind, cmd, args, call_type=1, **optargs)
+    return run_subprocess(subprocess.call, bitcoind, cmd, args, **optargs)
 
 def create_unsigned_transaction(source_address, destinations, redeem_script, input_txs):
     """
