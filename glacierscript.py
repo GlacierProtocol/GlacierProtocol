@@ -271,8 +271,7 @@ def require_minimum_bitcoind_version(min_version):
     Fail if the bitcoind version in use is older than required
     <min_version> - required minimum version in format of getnetworkinfo, i.e. 150100 for v0.15.1
     """
-    networkinfo_str = bitcoin_cli_checkoutput("getnetworkinfo")
-    networkinfo = json.loads(networkinfo_str)
+    networkinfo = json.loads(bitcoin_cli_checkoutput("getnetworkinfo"))
 
     if int(networkinfo["version"]) < min_version:
         print "ERROR: Your bitcoind version is too old. You have {}, I need {} or newer. Exiting...".format(networkinfo["version"], min_version)
@@ -293,11 +292,8 @@ def get_address_for_wif_privkey(privkey):
 
     ensure_bitcoind_running()
     bitcoin_cli_call("importprivkey", "{0} {1}".format(privkey, account_number))
-    addresses = bitcoin_cli_checkoutput("getaddressesbyaccount", account_number)
-
-    # extract address from JSON output
-    addresses_json = json.loads(addresses)
-    return addresses_json[0]
+    addresses = json.loads(bitcoin_cli_checkoutput("getaddressesbyaccount", account_number))
+    return addresses[0]
 
 
 def addmultisigaddress(m, addresses_or_pubkeys, address_type='p2sh-segwit'):
@@ -434,9 +430,7 @@ def sign_transaction(source_address, keys, redeem_script, unsigned_hex, input_tx
 
     argstring_2 = "{0} '{1}' '{2}'".format(
         unsigned_hex, json.dumps(inputs), json.dumps(keys))
-    signed_hex = bitcoin_cli_checkoutput("signrawtransaction", argstring_2).strip()
-
-    signed_tx = json.loads(signed_hex)
+    signed_tx = json.loads(bitcoin_cli_checkoutput("signrawtransaction", argstring_2).strip())
     return signed_tx
 
 
