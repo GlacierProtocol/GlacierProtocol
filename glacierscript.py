@@ -243,8 +243,6 @@ def ensure_bitcoind_running():
     """
     Start bitcoind (if it's not already running) and ensure it's functioning properly
     """
-    devnull = open("/dev/null")
-
     # start bitcoind.  If another bitcoind process is already running, this will just print an error
     # message (to /dev/null) and exit.
     #
@@ -256,13 +254,13 @@ def ensure_bitcoind_running():
     # 2. Remove this -deprecatedrpc=signrawtransaction
     # 3. Change getaddressesbyaccount to getaddressesbylabel
     # 4. Remove this -deprecatedrpc=accounts
-    bitcoind_call("","-daemon -connect=0.0.0.0 -deprecatedrpc=signrawtransaction -deprecatedrpc=accounts", call_type=1, stdout=devnull, stderr=devnull)
+    bitcoind_call("","-daemon -connect=0.0.0.0 -deprecatedrpc=signrawtransaction -deprecatedrpc=accounts", call_type=1, silent=True)
 
     # verify bitcoind started up and is functioning correctly
     times = 0
     while times <= 20:
         times += 1
-        if bitcoin_cli_call("getnetworkinfo", call_type=1, stdout=devnull, stderr=devnull) == 0:
+        if bitcoin_cli_call("getnetworkinfo", call_type=1, silent=True) == 0:
             return
         time.sleep(0.5)
 
@@ -337,23 +335,26 @@ def get_utxos(tx, address):
 
     return utxos
 
-def run_subprocess(exe, cmd, args, **optargs):
+def run_subprocess(exe, cmd, args, silent=False, **optargs):
     # all bitcoind & bitcoin-cli calls to go through this function
+    #  silent: if True, redirect stdout & stderr to /dev/null
     # optargs parsing:
     #  call_type: if 1 use subprocess.call instead of .checkoutput
-    #  stdout or stderr: if passed here then pass along to subprocess calls
     # defaults paramters: bitcoin_cli, subprocess.check_output, shell=True
     if cmd is not "": cmd = " {0}".format(cmd)
     if args is not "": args = " {0}".format(args)
     full_cmd = "{0}{1}{2}".format(exe, cmd, args)
     subprocess_args = { 'shell': True }
-    for var in ('stdout', 'stderr'):
-        if var in optargs: subprocess_args.update({ var: optargs.get(var) })
-
+    devnull = None
+    if silent:
+        devnull = open("/dev/null")
+        subprocess_args.update({ 'stdout': devnull, 'stderr': devnull })
     if optargs.get('call_type', None) is 1:
         cmd_output = subprocess.call(full_cmd, **subprocess_args)
     else:
         cmd_output = subprocess.check_output(full_cmd, **subprocess_args)
+    if devnull:
+        devnull.close()
     return cmd_output
 
 def bitcoin_cli_call(cmd="", args="", **optargs):
