@@ -336,13 +336,16 @@ def get_utxos(tx, address):
     return utxos
 
 def run_subprocess(sub_func, exe, cmd, args, silent=False, **optargs):
-    # all bitcoind & bitcoin-cli calls to go through this function
-    #  sub_func: which of {subprocess.call, subprocess.check_output} to run
-    #  exe: executable file name (e.g. bitcoin-cli)
-    #  cmd: subcommand (e.g. decodetransaction)
-    #  args: arguments to subcommand
-    #  silent: if True, redirect stdout & stderr to /dev/null
-    # default parameters: shell=True
+    """
+    Run a subprocess (bitcoind or bitcoin-cli)
+    Returns => return value of subprocess.call() or subprocess.check_output()
+
+    sub_func: which of {subprocess.call, subprocess.check_output} to run
+    exe: executable file name (e.g. bitcoin-cli)
+    cmd: subcommand (e.g. decodetransaction)
+    args: arguments to subcommand
+    silent: if True, redirect stdout & stderr to /dev/null
+    """
     if cmd is not "": cmd = " {0}".format(cmd)
     if args is not "": args = " {0}".format(args)
     full_cmd = "{0}{1}{2}".format(exe, cmd, args)
