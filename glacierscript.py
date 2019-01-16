@@ -262,7 +262,7 @@ def ensure_bitcoind_running():
     times = 0
     while times <= 20:
         times += 1
-        if bitcoin_cli_call("getnetworkinfo", "", call_type=1, stdout=devnull, stderr=devnull) == 0:
+        if bitcoin_cli_call("getnetworkinfo", call_type=1, stdout=devnull, stderr=devnull) == 0:
             return
         time.sleep(0.5)
 
@@ -273,7 +273,7 @@ def require_minimum_bitcoind_version(min_version):
     Fail if the bitcoind version in use is older than required
     <min_version> - required minimum version in format of getnetworkinfo, i.e. 150100 for v0.15.1
     """
-    networkinfo_str = bitcoin_cli_call("getnetworkinfo","")
+    networkinfo_str = bitcoin_cli_call("getnetworkinfo")
     networkinfo = json.loads(networkinfo_str)
 
     if int(networkinfo["version"]) < min_version:
