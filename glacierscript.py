@@ -269,7 +269,7 @@ def xor_hex_strings(str1, str2):
 
     xored = str1_dec ^ str2_dec
 
-    return "{:0{}x}".format(xored, max(len(str1), len(str2)))
+    return "{:0{}x}".format(xored, len(str1))
 
 
 def hex_private_key_to_WIF_private_key(hex_key):
@@ -304,14 +304,7 @@ def ensure_bitcoind_running():
     # message (to /dev/null) and exit.
     #
     # -connect=0.0.0.0 because we're doing local operations only (and have no network connection anyway)
-    #
-    # The only way to make our signrawtransaction compatible with both 0.16 and 0.17 is using this -deprecatedrpc=signrawtransaction..
-    # Once Bitcoin Core v0.17 is published on the Ubuntu PPA we should:
-    # 1. Convert signrawtransaction to signrawtransactionwithkeys (note, argument order changes)
-    # 2. Remove this -deprecatedrpc=signrawtransaction
-    # 3. Change getaddressesbyaccount to getaddressesbylabel
-    # 4. Remove this -deprecatedrpc=accounts
-    bitcoind_call("-daemon -connect=0.0.0.0 -deprecatedrpc=signrawtransaction -deprecatedrpc=accounts", silent=True)
+    bitcoind_call("-daemon -connect=0.0.0.0", silent=True)
 
     # verify bitcoind started up and is functioning correctly
     times = 0
@@ -339,18 +332,24 @@ def get_address_for_wif_privkey(privkey):
        <privkey> - a bitcoin private key in WIF format"""
 
     # Bitcoin Core doesn't have an RPC for "get the addresses associated w/this private key"
-    # just "get the addresses associated with this account"
-    # where "account" corresponds to an arbitrary tag we can associate with each private key
-    # so, we'll generate a unique "account number" to put this private key into.
+    # just "get the addresses associated with this label"
+    # where "label" corresponds to an arbitrary tag we can associate with each private key
+    # so, we'll generate a unique "label" to attach to this private key.
     #
     # we're running on a fresh bitcoind installation in the Glacier Protocol, so there's no
-    # meaningful risk here of colliding with previously-existing account numbers.
-    account_number = random.randint(0, 2**128)
+    # meaningful risk here of colliding with previously-existing labels.
+    label = random.randint(0, 2**128)
 
     ensure_bitcoind_running()
-    bitcoin_cli_call("importprivkey", "{0} {1}".format(privkey, account_number))
-    addresses = bitcoin_cli_json("getaddressesbyaccount", account_number)
-    return addresses[0]
+    bitcoin_cli_call("importprivkey", "{0} {1}".format(privkey, label))
+    addresses = bitcoin_cli_json("getaddressesbylabel", label)
+
+    # getaddressesbylabel returns multiple addresses associated with
+    # this one privkey; since we use it only for communicating the
+    # pubkey to addmultisigaddress, it doesn't matter which one we
+    # choose; they are all associated with the same pubkey.
+
+    return next(iter(addresses))
 
 
 def addmultisigaddress(m, addresses_or_pubkeys, address_type='p2sh-segwit'):
@@ -361,8 +360,6 @@ def addmultisigaddress(m, addresses_or_pubkeys, address_type='p2sh-segwit'):
     m: <int> number of multisig keys required for withdrawal
     addresses_or_pubkeys: List<string> either addresses or hex pubkeys for each of the N keys
     """
-
-    require_minimum_bitcoind_version(160000) # addmultisigaddress API changed in v0.16.0
     address_string = json.dumps(addresses_or_pubkeys)
     argstring = "{0} '{1}' '' '{2}'".format(m, address_string, address_type)
     return bitcoin_cli_json("addmultisigaddress", argstring)
@@ -453,8 +450,8 @@ def sign_transaction(source_address, keys, redeem_script, unsigned_hex, input_tx
             })
 
     argstring_2 = "{0} '{1}' '{2}'".format(
-        unsigned_hex, json.dumps(inputs), json.dumps(keys))
-    signed_tx = bitcoin_cli_json("signrawtransaction", argstring_2)
+        unsigned_hex, json.dumps(keys), json.dumps(inputs))
+    signed_tx = bitcoin_cli_json("signrawtransactionwithkey", argstring_2)
     return signed_tx
 
 
@@ -637,6 +634,7 @@ def deposit_interactive(m, n, dice_seed_length=62, rng_seed_length=20):
 
     safety_checklist()
     ensure_bitcoind_running()
+    require_minimum_bitcoind_version(170000) # getaddressesbylabel API new in v0.17.0
 
     print "\n"
     print "Creating {0}-of-{1} cold storage address.\n".format(m, n)
@@ -695,6 +693,7 @@ def withdraw_interactive():
 
     safety_checklist()
     ensure_bitcoind_running()
+    require_minimum_bitcoind_version(170000) # signrawtransaction API changed in v0.17.0
 
     approve = False
 
