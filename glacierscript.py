@@ -256,7 +256,7 @@ def ensure_bitcoind_running():
     # 2. Remove this -deprecatedrpc=signrawtransaction
     # 3. Change getaddressesbyaccount to getaddressesbylabel
     # 4. Remove this -deprecatedrpc=accounts
-    bitcoin_cli_call("","-daemon -connect=0.0.0.0 -deprecatedrpc=signrawtransaction -deprecatedrpc=accounts", use_bitcoind=1, call_type=1, stdout=devnull, stderr=devnull)
+    bitcoind_call("","-daemon -connect=0.0.0.0 -deprecatedrpc=signrawtransaction -deprecatedrpc=accounts", call_type=1, stdout=devnull, stderr=devnull)
 
     # verify bitcoind started up and is functioning correctly
     times = 0
@@ -337,17 +337,15 @@ def get_utxos(tx, address):
 
     return utxos
 
-def bitcoin_cli_call(cmd="", args="", **optargs):
+def run_subprocess(exe, cmd, args, **optargs):
     # all bitcoind & bitcoin-cli calls to go through this function
     # optargs parsing:
-    #  use_bitcoind: if 1 then bitcoind for root cmd rather than bitcoin_cli
     #  call_type: if 1 use subprocess.call instead of .checkoutput
     #  stdout or stderr: if passed here then pass along to subprocess calls
     # defaults paramters: bitcoin_cli, subprocess.check_output, shell=True
-    daemon_or_client = bitcoind if optargs.get('use_bitcoind', None) is 1 else bitcoin_cli
     if cmd is not "": cmd = " {0}".format(cmd)
     if args is not "": args = " {0}".format(args)
-    full_cmd = "{0}{1}{2}".format(daemon_or_client, cmd, args)
+    full_cmd = "{0}{1}{2}".format(exe, cmd, args)
     subprocess_args = { 'shell': True }
     for var in ('stdout', 'stderr'):
         if var in optargs: subprocess_args.update({ var: optargs.get(var) })
@@ -357,6 +355,12 @@ def bitcoin_cli_call(cmd="", args="", **optargs):
     else:
         cmd_output = subprocess.check_output(full_cmd, **subprocess_args)
     return cmd_output
+
+def bitcoin_cli_call(cmd="", args="", **optargs):
+    return run_subprocess(bitcoin_cli, cmd, args, **optargs)
+
+def bitcoind_call(cmd="", args="", **optargs):
+    return run_subprocess(bitcoind, cmd, args, **optargs)
 
 def create_unsigned_transaction(source_address, destinations, redeem_script, input_txs):
     """
