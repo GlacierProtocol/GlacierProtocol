@@ -34,6 +34,7 @@ import random
 import subprocess
 import json
 from decimal import Decimal
+import shlex
 
 # Taken from Gavin Andresen's "bitcointools" python library (exact link in source file)
 from base58 import b58encode
@@ -101,12 +102,13 @@ def run_subprocess(sub_func, exe, cmd, args, silent):
     silent: if True, redirect stdout & stderr to /dev/null
     """
     full_cmd = "{0} {1} {2} {3}".format(exe, cli_args, cmd, args)
-    subprocess_args = { 'shell': True }
+    cmd_list = shlex.split(full_cmd)
+    subprocess_args = {}
     devnull = None
     if silent:
         devnull = open("/dev/null")
         subprocess_args.update({ 'stdout': devnull, 'stderr': devnull })
-    cmd_output = sub_func(full_cmd, **subprocess_args)
+    cmd_output = sub_func(cmd_list, **subprocess_args)
     if devnull:
         devnull.close()
     return cmd_output
