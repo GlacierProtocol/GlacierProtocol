@@ -128,11 +128,11 @@ def bitcoin_cli_checkoutput(cmd="", args="", silent=False):
     return run_subprocess(subprocess.check_output, bitcoin_cli, cmd, args, silent)
 
 
-def bitcoin_cli_json(cmd="", args="", silent=False):
+def bitcoin_cli_json(cmd="", args=""):
     """
     Run `bitcoin-cli` using subprocess.check_output, parse output as JSON
     """
-    return json.loads(bitcoin_cli_checkoutput(cmd, args, silent))
+    return json.loads(bitcoin_cli_checkoutput(cmd, args, silent=False))
 
 
 def bitcoind_call(args="", silent=False):
