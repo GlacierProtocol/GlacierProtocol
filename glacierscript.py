@@ -100,7 +100,7 @@ def run_subprocess(sub_func, exe, cmd, args, silent):
     args: arguments to subcommand
     silent: if True, redirect stdout & stderr to /dev/null
     """
-    full_cmd = "{0} {1} {2}".format(exe, cmd, args)
+    full_cmd = "{0} {1} {2} {3}".format(exe, cli_args, cmd, args)
     subprocess_args = { 'shell': True }
     devnull = None
     if silent:
@@ -116,14 +116,14 @@ def bitcoin_cli_call(cmd="", args="", silent=False):
     """
     Run `bitcoin-cli` using subprocess.call
     """
-    return run_subprocess(subprocess.call, bitcoin_cli, cmd, args, silent)
+    return run_subprocess(subprocess.call, "bitcoin-cli", cmd, args, silent)
 
 
 def bitcoin_cli_checkoutput(cmd="", args=""):
     """
     Run `bitcoin-cli` using subprocess.check_output
     """
-    return run_subprocess(subprocess.check_output, bitcoin_cli, cmd, args, silent=False)
+    return run_subprocess(subprocess.check_output, "bitcoin-cli", cmd, args, silent=False)
 
 
 def bitcoin_cli_json(cmd="", args=""):
@@ -137,7 +137,7 @@ def bitcoind_call(args="", silent=False):
     """
     Run `bitcoind` using subprocess.call
     """
-    return run_subprocess(subprocess.call, bitcoind, "", args, silent)
+    return run_subprocess(subprocess.call, "bitcoind", "", args, silent)
 
 
 ################################################################################################
@@ -860,11 +860,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
 
-    global bitcoind, bitcoin_cli, wif_prefix
-    cli_args = "-testnet -rpcport={} -datadir=bitcoin-test-data ".format(args.testnet) if args.testnet else ""
+    global cli_args, wif_prefix
+    cli_args = "-testnet -rpcport={} -datadir=bitcoin-test-data".format(args.testnet) if args.testnet else ""
     wif_prefix = "EF" if args.testnet else "80"
-    bitcoind = "bitcoind " + cli_args
-    bitcoin_cli = "bitcoin-cli " + cli_args
 
     if args.program == "entropy":
         entropy(args.num_keys, args.rng)
