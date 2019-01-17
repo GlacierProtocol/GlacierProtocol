@@ -34,6 +34,7 @@ import random
 import subprocess
 import json
 from decimal import Decimal
+import pipes
 
 # Taken from Gavin Andresen's "bitcointools" python library (exact link in source file)
 from base58 import b58encode
@@ -113,7 +114,7 @@ def run_subprocess(sub_func, exe, *args, **kwargs):
     if silent:
         devnull = open("/dev/null")
         subprocess_args.update({ 'stdout': devnull, 'stderr': devnull })
-    verbose("bitcoin cli call:\n  {0}\n".format(" ".join(cmd_list)))
+    verbose("bitcoin cli call:\n  {0}\n".format(" ".join(pipes.quote(x) for x in cmd_list)))
     cmd_output = sub_func(cmd_list, **subprocess_args)
     verbose("bitcoin cli call {0}:\n  {1}\n".format(verbose_descrip, cmd_output))
     if devnull:
