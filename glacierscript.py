@@ -90,18 +90,20 @@ def btc_to_satoshi(btc):
 #
 ################################################################################################
 
-def run_subprocess(sub_func, exe, cmd, args, silent):
+def run_subprocess(sub_func, exe, *args, **kwargs):
     """
     Run a subprocess (bitcoind or bitcoin-cli)
     Returns => return value of subprocess.call() or subprocess.check_output()
 
     sub_func: which of {subprocess.call, subprocess.check_output} to run
     exe: executable file name (e.g. bitcoin-cli)
-    cmd: subcommand (e.g. decodetransaction)
-    args: arguments to subcommand
-    silent: if True, redirect stdout & stderr to /dev/null
+    args: arguments to exe
+    kwargs:
+      silent: if True, redirect stdout & stderr to /dev/null
     """
-    full_cmd = "{0} {1} {2} {3}".format(exe, cli_args, cmd, args)
+    silent = kwargs.pop('silent', False)
+    if kwargs: raise TypeError('Unexpected **kwargs: %r' % kwargs)
+    full_cmd = "{0} {1} {2} {3}".format(exe, cli_args, *args)
     cmd_list = shlex.split(full_cmd)
     subprocess_args = {}
     devnull = None
@@ -118,7 +120,7 @@ def bitcoin_cli_call(cmd, args="", silent=False):
     """
     Run `bitcoin-cli` using subprocess.call
     """
-    return run_subprocess(subprocess.call, "bitcoin-cli", cmd, args, silent)
+    return run_subprocess(subprocess.call, "bitcoin-cli", cmd, args, silent=silent)
 
 
 def bitcoin_cli_checkoutput(cmd, args):
@@ -139,7 +141,7 @@ def bitcoind_call(args, silent=False):
     """
     Run `bitcoind` using subprocess.call
     """
-    return run_subprocess(subprocess.call, "bitcoind", "", args, silent)
+    return run_subprocess(subprocess.call, "bitcoind", "", args, silent=silent)
 
 
 ################################################################################################
