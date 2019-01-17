@@ -124,11 +124,11 @@ def bitcoin_cli_call(cmd, *args, **kwargs):
     return run_subprocess(subprocess.call, "bitcoin-cli", cmd, *args, **kwargs)
 
 
-def bitcoin_cli_checkoutput(cmd, args):
+def bitcoin_cli_checkoutput(cmd, *args):
     """
     Run `bitcoin-cli` using subprocess.check_output
     """
-    return run_subprocess(subprocess.check_output, "bitcoin-cli", cmd, args, silent=False)
+    return run_subprocess(subprocess.check_output, "bitcoin-cli", cmd, *args, silent=False)
 
 
 def bitcoin_cli_json(cmd, args=""):
