@@ -90,10 +90,6 @@ def btc_to_satoshi(btc):
 #
 ################################################################################################
 
-def run_subprocess(sub_func, exe, *args, **kwargs):
-    arglist = shlex.split(" ".join(list(args)))
-    return run_subprocess_nosplit(sub_func, exe, *arglist, **kwargs)
-
 def run_subprocess_nosplit(sub_func, exe, *args, **kwargs):
     """
     Run a subprocess (bitcoind or bitcoin-cli)
@@ -126,25 +122,11 @@ def bitcoin_cli_call(cmd, *args, **kwargs):
     return run_subprocess_nosplit(subprocess.call, "bitcoin-cli", cmd, *args, **kwargs)
 
 
-def bitcoin_cli_checkoutput(cmd, *args):
-    """
-    Run `bitcoin-cli` using subprocess.check_output
-    """
-    return run_subprocess(subprocess.check_output, "bitcoin-cli", cmd, *args, silent=False)
-
-
 def bitcoin_cli_checkoutput_nosplit(cmd, *args):
     """
     Run `bitcoin-cli` using subprocess.check_output
     """
     return run_subprocess_nosplit(subprocess.check_output, "bitcoin-cli", cmd, *args, silent=False)
-
-
-def bitcoin_cli_json(cmd, args=""):
-    """
-    Run `bitcoin-cli` using subprocess.check_output, parse output as JSON
-    """
-    return json.loads(bitcoin_cli_checkoutput(cmd, args))
 
 
 def bitcoin_cli_json_nosplit(cmd, *args):
