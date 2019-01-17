@@ -103,7 +103,7 @@ def run_subprocess(sub_func, exe, *args, **kwargs):
     """
     silent = kwargs.pop('silent', False)
     if kwargs: raise TypeError('Unexpected **kwargs: %r' % kwargs)
-    mylist = [exe, cli_args] + list(args)
+    mylist = [exe] + cli_args + list(args)
     full_cmd = " ".join(mylist)
     cmd_list = shlex.split(full_cmd)
     subprocess_args = {}
@@ -865,7 +865,7 @@ if __name__ == "__main__":
 
 
     global cli_args, wif_prefix
-    cli_args = "-testnet -rpcport={} -datadir=bitcoin-test-data".format(args.testnet) if args.testnet else ""
+    cli_args = ["-testnet", "-rpcport={}".format(args.testnet), "-datadir=bitcoin-test-data"] if args.testnet else []
     wif_prefix = "EF" if args.testnet else "80"
 
     if args.program == "entropy":
