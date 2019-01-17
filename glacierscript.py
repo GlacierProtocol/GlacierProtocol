@@ -109,12 +109,12 @@ def run_subprocess(sub_func, exe, *args, **kwargs):
     if sub_func == subprocess.check_output: verbose_descrip = "output"
     if verbose_descrip is None: raise TypeError("Expected sub_func to be either call or check_output")
     cmd_list = [exe] + cli_args + list(args)
+    verbose("bitcoin cli call:\n  {0}\n".format(" ".join(pipes.quote(x) for x in cmd_list)))
     subprocess_args = {}
     devnull = None
     if silent:
         devnull = open("/dev/null")
         subprocess_args.update({ 'stdout': devnull, 'stderr': devnull })
-    verbose("bitcoin cli call:\n  {0}\n".format(" ".join(pipes.quote(x) for x in cmd_list)))
     cmd_output = sub_func(cmd_list, **subprocess_args)
     verbose("bitcoin cli call {0}:\n  {1}\n".format(verbose_descrip, cmd_output))
     if devnull:
