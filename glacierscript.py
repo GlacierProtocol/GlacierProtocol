@@ -91,6 +91,10 @@ def btc_to_satoshi(btc):
 ################################################################################################
 
 def run_subprocess(sub_func, exe, *args, **kwargs):
+    arglist = shlex.split(" ".join(list(args)))
+    return run_subprocess_nosplit(sub_func, exe, *arglist, **kwargs)
+
+def run_subprocess_nosplit(sub_func, exe, *args, **kwargs):
     """
     Run a subprocess (bitcoind or bitcoin-cli)
     Returns => return value of subprocess.call() or subprocess.check_output()
@@ -103,8 +107,7 @@ def run_subprocess(sub_func, exe, *args, **kwargs):
     """
     silent = kwargs.pop('silent', False)
     if kwargs: raise TypeError('Unexpected **kwargs: %r' % kwargs)
-    arglist = shlex.split(" ".join(list(args)))
-    cmd_list = [exe] + cli_args + arglist
+    cmd_list = [exe] + cli_args + list(args)
     subprocess_args = {}
     devnull = None
     if silent:
