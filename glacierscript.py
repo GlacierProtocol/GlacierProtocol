@@ -133,6 +133,13 @@ def bitcoin_cli_checkoutput(cmd, *args):
     return run_subprocess(subprocess.check_output, "bitcoin-cli", cmd, *args, silent=False)
 
 
+def bitcoin_cli_checkoutput_nosplit(cmd, *args):
+    """
+    Run `bitcoin-cli` using subprocess.check_output
+    """
+    return run_subprocess_nosplit(subprocess.check_output, "bitcoin-cli", cmd, *args, silent=False)
+
+
 def bitcoin_cli_json(cmd, args=""):
     """
     Run `bitcoin-cli` using subprocess.check_output, parse output as JSON
@@ -421,10 +428,10 @@ def create_unsigned_transaction(source_address, destinations, redeem_script, inp
                 "vout": int(utxo["n"])
             })
 
-    argstring = "'{0}' '{1}'".format(
-        json.dumps(inputs), json.dumps(destinations))
-
-    tx_unsigned_hex = bitcoin_cli_checkoutput("createrawtransaction", argstring).strip()
+    tx_unsigned_hex = bitcoin_cli_checkoutput_nosplit(
+        "createrawtransaction",
+        json.dumps(inputs),
+        json.dumps(destinations)).strip()
 
     return tx_unsigned_hex
 
