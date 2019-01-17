@@ -147,6 +147,13 @@ def bitcoin_cli_json(cmd, args=""):
     return json.loads(bitcoin_cli_checkoutput(cmd, args))
 
 
+def bitcoin_cli_json_nosplit(cmd, *args):
+    """
+    Run `bitcoin-cli` using subprocess.check_output, parse output as JSON
+    """
+    return json.loads(bitcoin_cli_checkoutput_nosplit(cmd, *args))
+
+
 def bitcoind_call(*args, **kwargs):
     """
     Run `bitcoind` using subprocess.call
@@ -335,7 +342,7 @@ def require_minimum_bitcoind_version(min_version):
     Fail if the bitcoind version in use is older than required
     <min_version> - required minimum version in format of getnetworkinfo, i.e. 150100 for v0.15.1
     """
-    networkinfo = bitcoin_cli_json("getnetworkinfo")
+    networkinfo = bitcoin_cli_json_nosplit("getnetworkinfo")
 
     if int(networkinfo["version"]) < min_version:
         print "ERROR: Your bitcoind version is too old. You have {}, I need {} or newer. Exiting...".format(networkinfo["version"], min_version)
