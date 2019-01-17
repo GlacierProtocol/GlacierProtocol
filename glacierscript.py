@@ -144,7 +144,7 @@ def bitcoind_call(*args, **kwargs):
     """
     Run `bitcoind` using subprocess.call
     """
-    return run_subprocess(subprocess.call, "bitcoind", *args, **kwargs)
+    return run_subprocess_nosplit(subprocess.call, "bitcoind", *args, **kwargs)
 
 
 ################################################################################################
