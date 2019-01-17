@@ -363,7 +363,7 @@ def get_address_for_wif_privkey(privkey):
 
     ensure_bitcoind_running()
     bitcoin_cli_call("importprivkey", privkey, label)
-    addresses = bitcoin_cli_json("getaddressesbylabel", label)
+    addresses = bitcoin_cli_json_nosplit("getaddressesbylabel", label)
 
     # getaddressesbylabel returns multiple addresses associated with
     # this one privkey; since we use it only for communicating the
