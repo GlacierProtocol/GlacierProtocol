@@ -101,9 +101,8 @@ def run_subprocess(sub_func, exe, *args, **kwargs):
     exe: executable file name (e.g. bitcoin-cli)
     args: arguments to exe
     kwargs:
-      silent: if True, redirect stdout & stderr to /dev/null
+      none, should be removed
     """
-    silent = kwargs.pop('silent', False)
     if kwargs: raise TypeError('Unexpected **kwargs: %r' % kwargs)
     cmd_list = [exe] + cli_args + list(args)
     verbose("bitcoin cli call:\n  {0}\n".format(" ".join(pipes.quote(x) for x in cmd_list)))
@@ -129,7 +128,7 @@ def bitcoin_cli_checkoutput(cmd, *args):
     """
     Run `bitcoin-cli` using subprocess.check_output
     """
-    return run_subprocess(subprocess.check_output, "bitcoin-cli", cmd, *args, silent=False)
+    return run_subprocess(subprocess.check_output, "bitcoin-cli", cmd, *args)
 
 
 def bitcoin_cli_json(cmd, *args):
@@ -310,13 +309,13 @@ def ensure_bitcoind_running():
     # message (to /dev/null) and exit.
     #
     # -connect=0.0.0.0 because we're doing local operations only (and have no network connection anyway)
-    bitcoind_call("-daemon", "-connect=0.0.0.0", silent=True)
+    bitcoind_call("-daemon", "-connect=0.0.0.0")
 
     # verify bitcoind started up and is functioning correctly
     times = 0
     while times <= 20:
         times += 1
-        if bitcoin_cli_call("getnetworkinfo", silent=True) == 0:
+        if bitcoin_cli_call("getnetworkinfo") == 0:
             return
         time.sleep(0.5)
 
