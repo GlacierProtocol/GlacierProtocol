@@ -506,7 +506,7 @@ def get_fee_interactive(source_address, keys, destinations, redeem_script, input
         signed_tx = sign_transaction(source_address, keys,
                                      redeem_script, unsigned_tx, input_txs)
 
-        decoded_tx = bitcoin_cli_json("decoderawtransaction", signed_tx["hex"])
+        decoded_tx = bitcoin_cli_json_nosplit("decoderawtransaction", signed_tx["hex"])
         size = decoded_tx["vsize"]
 
         fee = size * fee_basis_satoshis_per_byte
