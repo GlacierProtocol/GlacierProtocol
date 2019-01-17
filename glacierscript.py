@@ -109,7 +109,9 @@ def run_subprocess(sub_func, exe, *args, **kwargs):
     if silent:
         devnull = open("/dev/null")
         subprocess_args.update({ 'stdout': devnull, 'stderr': devnull })
+    verbose("bitcoin cli call:\n  {0}\n".format(" ".join(cmd_list)))
     cmd_output = sub_func(cmd_list, **subprocess_args)
+    verbose("bitcoin cli call output:\n  {0}\n".format(cmd_output))
     if devnull:
         devnull.close()
     return cmd_output
