@@ -469,9 +469,9 @@ def sign_transaction(source_address, keys, redeem_script, unsigned_hex, input_tx
                 "redeemScript": redeem_script
             })
 
-    argstring_2 = "{0} '{1}' '{2}'".format(
+    signed_tx = bitcoin_cli_json_nosplit(
+        "signrawtransactionwithkey",
         unsigned_hex, json.dumps(keys), json.dumps(inputs))
-    signed_tx = bitcoin_cli_json("signrawtransactionwithkey", argstring_2)
     return signed_tx
 
 
