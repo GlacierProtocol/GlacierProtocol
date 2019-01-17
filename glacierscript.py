@@ -103,6 +103,10 @@ def run_subprocess(sub_func, exe, *args, **kwargs):
     """
     silent = kwargs.pop('silent', False)
     if kwargs: raise TypeError('Unexpected **kwargs: %r' % kwargs)
+    verbose_descrip = None
+    if sub_func == subprocess.call: verbose_descrip = "return code"
+    if sub_func == subprocess.check_output: verbose_descrip = "output"
+    if verbose_descrip is None: raise TypeError("Expected sub_func to be either call or check_output")
     cmd_list = [exe] + cli_args + list(args)
     subprocess_args = {}
     devnull = None
@@ -111,7 +115,7 @@ def run_subprocess(sub_func, exe, *args, **kwargs):
         subprocess_args.update({ 'stdout': devnull, 'stderr': devnull })
     verbose("bitcoin cli call:\n  {0}\n".format(" ".join(cmd_list)))
     cmd_output = sub_func(cmd_list, **subprocess_args)
-    verbose("bitcoin cli call output:\n  {0}\n".format(cmd_output))
+    verbose("bitcoin cli call {0}:\n  {1}\n".format(verbose_descrip, cmd_output))
     if devnull:
         devnull.close()
     return cmd_output
