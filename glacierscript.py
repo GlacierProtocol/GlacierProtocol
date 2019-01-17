@@ -34,7 +34,6 @@ import random
 import subprocess
 import json
 from decimal import Decimal
-import shlex
 
 # Taken from Gavin Andresen's "bitcointools" python library (exact link in source file)
 from base58 import b58encode
