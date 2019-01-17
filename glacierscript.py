@@ -123,7 +123,7 @@ def bitcoin_cli_call(cmd, *args, **kwargs):
     """
     Run `bitcoin-cli` using subprocess.call
     """
-    return run_subprocess(subprocess.call, "bitcoin-cli", cmd, *args, **kwargs)
+    return run_subprocess_nosplit(subprocess.call, "bitcoin-cli", cmd, *args, **kwargs)
 
 
 def bitcoin_cli_checkoutput(cmd, *args):
