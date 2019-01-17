@@ -138,11 +138,11 @@ def bitcoin_cli_json(cmd, args=""):
     return json.loads(bitcoin_cli_checkoutput(cmd, args))
 
 
-def bitcoind_call(args, silent=False):
+def bitcoind_call(*args, **kwargs):
     """
     Run `bitcoind` using subprocess.call
     """
-    return run_subprocess(subprocess.call, "bitcoind", "", args, silent=silent)
+    return run_subprocess(subprocess.call, "bitcoind", *args, **kwargs)
 
 
 ################################################################################################
@@ -309,7 +309,7 @@ def ensure_bitcoind_running():
     # message (to /dev/null) and exit.
     #
     # -connect=0.0.0.0 because we're doing local operations only (and have no network connection anyway)
-    bitcoind_call("-daemon -connect=0.0.0.0", silent=True)
+    bitcoind_call("-daemon", "-connect=0.0.0.0", silent=True)
 
     # verify bitcoind started up and is functioning correctly
     times = 0
