@@ -382,8 +382,7 @@ def addmultisigaddress(m, addresses_or_pubkeys, address_type='p2sh-segwit'):
     addresses_or_pubkeys: List<string> either addresses or hex pubkeys for each of the N keys
     """
     address_string = json.dumps(addresses_or_pubkeys)
-    argstring = "{0} '{1}' '' '{2}'".format(m, address_string, address_type)
-    return bitcoin_cli_json("addmultisigaddress", argstring)
+    return bitcoin_cli_json_nosplit("addmultisigaddress", str(m), address_string, "", address_type)
 
 def get_utxos(tx, address):
     """
