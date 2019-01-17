@@ -90,7 +90,7 @@ def btc_to_satoshi(btc):
 #
 ################################################################################################
 
-def run_subprocess_nosplit(sub_func, exe, *args, **kwargs):
+def run_subprocess(sub_func, exe, *args, **kwargs):
     """
     Run a subprocess (bitcoind or bitcoin-cli)
     Returns => return value of subprocess.call() or subprocess.check_output()
@@ -119,14 +119,14 @@ def bitcoin_cli_call(cmd, *args, **kwargs):
     """
     Run `bitcoin-cli` using subprocess.call
     """
-    return run_subprocess_nosplit(subprocess.call, "bitcoin-cli", cmd, *args, **kwargs)
+    return run_subprocess(subprocess.call, "bitcoin-cli", cmd, *args, **kwargs)
 
 
 def bitcoin_cli_checkoutput_nosplit(cmd, *args):
     """
     Run `bitcoin-cli` using subprocess.check_output
     """
-    return run_subprocess_nosplit(subprocess.check_output, "bitcoin-cli", cmd, *args, silent=False)
+    return run_subprocess(subprocess.check_output, "bitcoin-cli", cmd, *args, silent=False)
 
 
 def bitcoin_cli_json_nosplit(cmd, *args):
@@ -140,7 +140,7 @@ def bitcoind_call(*args, **kwargs):
     """
     Run `bitcoind` using subprocess.call
     """
-    return run_subprocess_nosplit(subprocess.call, "bitcoind", *args, **kwargs)
+    return run_subprocess(subprocess.call, "bitcoind", *args, **kwargs)
 
 
 ################################################################################################
