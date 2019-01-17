@@ -103,9 +103,8 @@ def run_subprocess(sub_func, exe, *args, **kwargs):
     """
     silent = kwargs.pop('silent', False)
     if kwargs: raise TypeError('Unexpected **kwargs: %r' % kwargs)
-    mylist = [exe] + cli_args + list(args)
-    full_cmd = " ".join(mylist)
-    cmd_list = shlex.split(full_cmd)
+    arglist = shlex.split(" ".join(list(args)))
+    cmd_list = [exe] + cli_args + arglist
     subprocess_args = {}
     devnull = None
     if silent:
