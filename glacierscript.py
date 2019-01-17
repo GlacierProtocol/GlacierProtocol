@@ -747,7 +747,7 @@ def withdraw_interactive():
             if os.path.isfile(hex_tx):
                 hex_tx = open(hex_tx).read().strip()
 
-            tx = bitcoin_cli_json("decoderawtransaction", hex_tx)
+            tx = bitcoin_cli_json_nosplit("decoderawtransaction", hex_tx)
             txs.append(tx)
             utxos += get_utxos(tx, source_address)
 
