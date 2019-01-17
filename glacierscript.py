@@ -342,7 +342,7 @@ def get_address_for_wif_privkey(privkey):
     #
     # we're running on a fresh bitcoind installation in the Glacier Protocol, so there's no
     # meaningful risk here of colliding with previously-existing labels.
-    label = random.randint(0, 2**128)
+    label = str(random.randint(0, 2**128))
 
     ensure_bitcoind_running()
     bitcoin_cli_call("importprivkey", "{0} {1}".format(privkey, label))
