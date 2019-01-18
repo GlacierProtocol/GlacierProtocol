@@ -92,7 +92,7 @@ def btc_to_satoshi(btc):
 #
 ################################################################################################
 
-def run_subprocess(sub_func, exe, *args, **kwargs):
+def run_subprocess(sub_func, exe, *args):
     """
     Run a subprocess (bitcoind or bitcoin-cli)
     Returns => return value of subprocess.call() or subprocess.check_output()
@@ -100,10 +100,7 @@ def run_subprocess(sub_func, exe, *args, **kwargs):
     sub_func: which of {subprocess.call, subprocess.check_output} to run
     exe: executable file name (e.g. bitcoin-cli)
     args: arguments to exe
-    kwargs:
-      none, should be removed
     """
-    if kwargs: raise TypeError('Unexpected **kwargs: %r' % kwargs)
     cmd_list = [exe] + cli_args + list(args)
     verbose("bitcoin cli call:\n  {0}\n".format(" ".join(pipes.quote(x) for x in cmd_list)))
     output = StringIO.StringIO()
@@ -117,11 +114,11 @@ def run_subprocess(sub_func, exe, *args, **kwargs):
     return cmd_output
 
 
-def bitcoin_cli_call(cmd, *args, **kwargs):
+def bitcoin_cli_call(cmd, *args):
     """
     Run `bitcoin-cli` using subprocess.call
     """
-    return run_subprocess(subprocess.call, "bitcoin-cli", cmd, *args, **kwargs)
+    return run_subprocess(subprocess.call, "bitcoin-cli", cmd, *args)
 
 
 def bitcoin_cli_checkoutput(cmd, *args):
@@ -138,11 +135,11 @@ def bitcoin_cli_json(cmd, *args):
     return json.loads(bitcoin_cli_checkoutput(cmd, *args))
 
 
-def bitcoind_call(*args, **kwargs):
+def bitcoind_call(*args):
     """
     Run `bitcoind` using subprocess.call
     """
-    return run_subprocess(subprocess.call, "bitcoind", *args, **kwargs)
+    return run_subprocess(subprocess.call, "bitcoind", *args)
 
 
 ################################################################################################
