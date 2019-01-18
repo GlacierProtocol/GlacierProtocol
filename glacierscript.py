@@ -92,12 +92,11 @@ def btc_to_satoshi(btc):
 #
 ################################################################################################
 
-def run_subprocess(sub_func, exe, *args):
+def run_subprocess(exe, *args):
     """
     Run a subprocess (bitcoind or bitcoin-cli)
-    Returns => return value of subprocess.call() or subprocess.check_output()
+    Returns => (return code, output)
 
-    sub_func: which of {subprocess.call, subprocess.check_output} to run
     exe: executable file name (e.g. bitcoin-cli)
     args: arguments to exe
     """
@@ -115,32 +114,32 @@ def run_subprocess(sub_func, exe, *args):
 
 def bitcoin_cli_call(*args):
     """
-    Run `bitcoin-cli` using subprocess.call
+    Run `bitcoin-cli`, return OS return code
     """
-    retcode, _ = run_subprocess(subprocess.call, "bitcoin-cli", *args)
+    retcode, _ = run_subprocess("bitcoin-cli", *args)
     return retcode
 
 
 def bitcoin_cli_checkoutput(*args):
     """
-    Run `bitcoin-cli` using subprocess.check_output
+    Run `bitcoin-cli`, fail if OS return code nonzero, return output
     """
-    _, output = run_subprocess(subprocess.check_output, "bitcoin-cli", *args)
+    _, output = run_subprocess("bitcoin-cli", *args)
     return output
 
 
 def bitcoin_cli_json(*args):
     """
-    Run `bitcoin-cli` using subprocess.check_output, parse output as JSON
+    Run `bitcoin-cli`, parse output as JSON
     """
     return json.loads(bitcoin_cli_checkoutput(*args))
 
 
 def bitcoind_call(*args):
     """
-    Run `bitcoind` using subprocess.call
+    Run `bitcoind`, return OS return code
     """
-    retcode, _ = run_subprocess(subprocess.call, "bitcoind", *args)
+    retcode, _ = run_subprocess("bitcoind", *args)
     return retcode
 
 
