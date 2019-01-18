@@ -114,25 +114,25 @@ def run_subprocess(sub_func, exe, *args):
     return cmd_output
 
 
-def bitcoin_cli_call(cmd, *args):
+def bitcoin_cli_call(*args):
     """
     Run `bitcoin-cli` using subprocess.call
     """
-    return run_subprocess(subprocess.call, "bitcoin-cli", cmd, *args)
+    return run_subprocess(subprocess.call, "bitcoin-cli", *args)
 
 
-def bitcoin_cli_checkoutput(cmd, *args):
+def bitcoin_cli_checkoutput(*args):
     """
     Run `bitcoin-cli` using subprocess.check_output
     """
-    return run_subprocess(subprocess.check_output, "bitcoin-cli", cmd, *args)
+    return run_subprocess(subprocess.check_output, "bitcoin-cli", *args)
 
 
-def bitcoin_cli_json(cmd, *args):
+def bitcoin_cli_json(*args):
     """
     Run `bitcoin-cli` using subprocess.check_output, parse output as JSON
     """
-    return json.loads(bitcoin_cli_checkoutput(cmd, *args))
+    return json.loads(bitcoin_cli_checkoutput(*args))
 
 
 def bitcoind_call(*args):
