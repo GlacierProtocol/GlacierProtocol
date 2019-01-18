@@ -15,7 +15,7 @@
 
 SHELL := /bin/bash
 
-all-tests := $(addsuffix .test, $(basename $(wildcard t/*.run)))
+all-tests := $(sort $(addsuffix .test, $(basename $(wildcard t/*.run))))
 
 .PHONY : prereqs test all %.test
 
