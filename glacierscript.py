@@ -109,23 +109,24 @@ def run_subprocess(sub_func, exe, *args):
         for line in iter(pipe.stdout.readline, b''):
             output.write(line)
     retcode = pipe.wait()
-    cmd_output = retcode if sub_func == subprocess.call else output.getvalue()
     verbose("bitcoin cli call return code: {0}  output:\n  {1}\n".format(retcode, output.getvalue()))
-    return cmd_output
+    return (retcode, output.getvalue())
 
 
 def bitcoin_cli_call(*args):
     """
     Run `bitcoin-cli` using subprocess.call
     """
-    return run_subprocess(subprocess.call, "bitcoin-cli", *args)
+    retcode, _ = run_subprocess(subprocess.call, "bitcoin-cli", *args)
+    return retcode
 
 
 def bitcoin_cli_checkoutput(*args):
     """
     Run `bitcoin-cli` using subprocess.check_output
     """
-    return run_subprocess(subprocess.check_output, "bitcoin-cli", *args)
+    _, output = run_subprocess(subprocess.check_output, "bitcoin-cli", *args)
+    return output
 
 
 def bitcoin_cli_json(*args):
@@ -139,7 +140,8 @@ def bitcoind_call(*args):
     """
     Run `bitcoind` using subprocess.call
     """
-    return run_subprocess(subprocess.call, "bitcoind", *args)
+    retcode, _ = run_subprocess(subprocess.call, "bitcoind", *args)
+    return retcode
 
 
 ################################################################################################
