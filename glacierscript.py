@@ -95,7 +95,7 @@ def btc_to_satoshi(btc):
 def run_subprocess(exe, *args):
     """
     Run a subprocess (bitcoind or bitcoin-cli)
-    Returns => (return code, output)
+    Returns => (command, return code, output)
 
     exe: executable file name (e.g. bitcoin-cli)
     args: arguments to exe
@@ -109,14 +109,14 @@ def run_subprocess(exe, *args):
             output.write(line)
     retcode = pipe.wait()
     verbose("bitcoin cli call return code: {0}  output:\n  {1}\n".format(retcode, output.getvalue()))
-    return (retcode, output.getvalue())
+    return (cmd_list, retcode, output.getvalue())
 
 
 def bitcoin_cli_call(*args):
     """
     Run `bitcoin-cli`, return OS return code
     """
-    retcode, _ = run_subprocess("bitcoin-cli", *args)
+    _, retcode, _ = run_subprocess("bitcoin-cli", *args)
     return retcode
 
 
@@ -124,7 +124,8 @@ def bitcoin_cli_checkoutput(*args):
     """
     Run `bitcoin-cli`, fail if OS return code nonzero, return output
     """
-    _, output = run_subprocess("bitcoin-cli", *args)
+    cmd_list, retcode, output = run_subprocess("bitcoin-cli", *args)
+    if retcode != 0: raise subprocess.CalledProcessError(retcode, cmd_list, output=output)
     return output
 
 
@@ -139,7 +140,7 @@ def bitcoind_call(*args):
     """
     Run `bitcoind`, return OS return code
     """
-    retcode, _ = run_subprocess("bitcoind", *args)
+    _, retcode, _ = run_subprocess("bitcoind", *args)
     return retcode
 
 
