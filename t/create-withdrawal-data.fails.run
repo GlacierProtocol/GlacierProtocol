@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# Illegal value entered for dest address, bitcoin-cli should fail and cause script abort
+
+
+../../glacierscript.py --testnet=$1 create-withdrawal-data << INPUT 2>&1
+y
+y
+y
+y
+y
+y
+2N93du8YobdgsHyu3qgBvSyhGUT52utMNeA
+522103d14ddcfb6817f5579695bbb3eb3e185887bf2942b031e6f716343b8fe7e9e8e221028fcd46f8614b2cbf318096968242a1e22bcfb6d8f2b6dc939c8c27c347b2937b210315acb550120f4cdcb460d5c49080ab508ca4ccd8dedecac22feeac8cd017d4c121022b063ee2f22f9e1982c140fe778672c683111a796dcccdbd47bb65e3d608a98354ae
+myP4xdJNwAW9iMakvCjnozg814ewgn8apx
+1
+0200000001027a30118f5a29f686071774589a49e27c05963530fd5b52c29cc03d5874e5bd000000006b483045022100d4504530751a274934eae4689d7745ab35fda90d769015b3efdec004dc6055d002207654cf1e67900922c6519493584cfcc12b40ef608853a6f51a171f5d23f5da14012103cad1d192effda236ff8f8f2472ecd68d76c55e1e4416eb31bb689770cc330409feffffff02d3f55b05000000001976a91443187b37dcb5177953d11b1f2272d5b22ab95ff188ac809698000000000017a914ad50fb2489353008e75b0193011ff1f4b76f798c8735901300
+2
+cQCrT9Ncs9729ao7jbmAWrD9z7tF64s2yKzmD6nkiLAi9sXVZWAn
+cP65UeSDZPiTLB6CBwasWv9oJYEjRgQXhswfwcT9HscEKDcEbgy4
+10
+INPUT
+
+retVal=$?
+if [ $retVal -eq 0 ]; then
+    echo "Error: expected glacierscript.py to fail"
+    exit 1
+fi
