@@ -24,7 +24,11 @@ for i in create-withdrawal-data.*.golden; do
         if [ "$line" = "Raw signed transaction (hex):" ]; then MATCH=true; fi
 
     done < "$i"
-    bitcoin-cli -testnet decoderawtransaction "$HEX" > "${i/%.golden/.decoded}"
+    if [ "$MATCH" = true ]; then
+        bitcoin-cli -testnet decoderawtransaction "$HEX"
+    else
+        echo "No transaction found"
+    fi > "${i/%.golden/.decoded}"
 done
 
 
