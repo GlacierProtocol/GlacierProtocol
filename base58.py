@@ -1,130 +1,143 @@
-#!/usr/bin/env python
+'''Base58 encoding
 
-# from:
-# https://raw.githubusercontent.com/gavinandresen/bitcointools/f377bbe0882669423895c6e91b163d93d4fdf560/base58.py
+Implementations of Base58 and Base58Check endcodings that are compatible
+with the bitcoin network.
+'''
 
-# Copyright (c) 2010 Gavin Andresen
+# This module is based upon base58 snippets found scattered over many bitcoin
+# tools written in python. From what I gather the original source is from a
+# forum post by Gavin Andresen, so direct your praise to him.
+# This module adds shiny packaging and support for python3.
 
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
+__version__ = '0.2.3'
 
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+from hashlib import sha256
 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# 58 character alphabet used
+alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 
-"""encode/decode base58 in the same way that Bitcoin does"""
 
-import math
-
-__b58chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
-__b58base = len(__b58chars)
+if bytes == str:  # python2
+    iseq = lambda s: map(ord, s)
+    bseq = lambda s: ''.join(map(chr, s))
+    buffer = lambda s: s
+else:  # python3
+    iseq = lambda s: s
+    bseq = bytes
+    buffer = lambda s: s.buffer
 
 
 def b58encode(v):
-    """ encode v, which is a string of bytes, to base58.    
-    """
+    '''Encode a string using Base58'''
 
-    long_value = 0L
-    for (i, c) in enumerate(v[::-1]):
-        long_value += ord(c) << (8 * i)  # 2x speedup vs. exponentiation
+    if not isinstance(v, bytes):
+        raise TypeError("a bytes-like object is required, not '%s'" %
+                        type(v).__name__)
 
-    result = ''
-    while long_value >= __b58base:
-        div, mod = divmod(long_value, __b58base)
-        result = __b58chars[mod] + result
-        long_value = div
-    result = __b58chars[long_value] + result
+    origlen = len(v)
+    v = v.lstrip(b'\0')
+    newlen = len(v)
 
-    # Bitcoin does a little leading-zero-compression:
-    # leading 0-bytes in the input become leading-1s
-    nPad = 0
-    for c in v:
-        if c == '\0':
-            nPad += 1
-        else:
-            break
-
-    return (__b58chars[0] * nPad) + result
-
-
-def b58decode(v, length):
-    """ decode v into a string of len bytes
-    """
-    long_value = 0L
-    for (i, c) in enumerate(v[::-1]):
-        long_value += __b58chars.find(c) * (__b58base**i)
+    p, acc = 1, 0
+    for c in iseq(v[::-1]):
+        acc += p * c
+        p = p << 8
 
     result = ''
-    while long_value >= 256:
-        div, mod = divmod(long_value, 256)
-        result = chr(mod) + result
-        long_value = div
-    result = chr(long_value) + result
+    while acc > 0:
+        acc, mod = divmod(acc, 58)
+        result += alphabet[mod]
 
-    nPad = 0
-    for c in v:
-        if c == __b58chars[0]:
-            nPad += 1
-        else:
-            break
+    return (result + alphabet[0] * (origlen - newlen))[::-1]
 
-    result = chr(0) * nPad + result
-    if length is not None and len(result) != length:
-        return None
+
+def b58decode(v):
+    '''Decode a Base58 encoded string'''
+
+    if not isinstance(v, str):
+        v = v.decode('ascii')
+
+    origlen = len(v)
+    v = v.lstrip(alphabet[0])
+    newlen = len(v)
+
+    p, acc = 1, 0
+    for c in v[::-1]:
+        acc += p * alphabet.index(c)
+        p *= 58
+
+    result = []
+    while acc > 0:
+        acc, mod = divmod(acc, 256)
+        result.append(mod)
+
+    return (bseq(result) + b'\0' * (origlen - newlen))[::-1]
+
+
+def b58encode_check(v):
+    '''Encode a string using Base58 with a 4 character checksum'''
+
+    digest = sha256(sha256(v).digest()).digest()
+    return b58encode(v + digest[:4])
+
+
+def b58decode_check(v):
+    '''Decode and verify the checksum of a Base58 encoded string'''
+
+    result = b58decode(v)
+    result, check = result[:-4], result[-4:]
+    digest = sha256(sha256(result).digest()).digest()
+
+    if check != digest[:4]:
+        raise ValueError("Invalid checksum")
 
     return result
 
-try:
-    import hashlib
-    hashlib.new('ripemd160')
-    have_crypto = True
-except ImportError:
-    have_crypto = False
 
+def main():
+    '''Base58 encode or decode FILE, or standard input, to standard output.'''
 
-def hash_160(public_key):
-    if not have_crypto:
-        return ''
-    h1 = hashlib.sha256(public_key).digest()
-    r160 = hashlib.new('ripemd160')
-    r160.update(h1)
-    h2 = r160.digest()
-    return h2
+    import sys
+    import argparse
 
+    stdout = buffer(sys.stdout)
 
-def public_key_to_bc_address(public_key, version="\x00"):
-    if not have_crypto or public_key is None:
-        return ''
-    h160 = hash_160(public_key)
-    return hash_160_to_bc_address(h160, version=version)
+    parser = argparse.ArgumentParser(description=main.__doc__)
+    parser.add_argument(
+        'file',
+        metavar='FILE',
+        nargs='?',
+        type=argparse.FileType('r'),
+        default='-')
+    parser.add_argument(
+        '-d', '--decode',
+        action='store_true',
+        help='decode data')
+    parser.add_argument(
+        '-c', '--check',
+        action='store_true',
+        help='append a checksum before encoding')
 
+    args = parser.parse_args()
+    fun = {
+        (False, False): b58encode,
+        (False, True): b58encode_check,
+        (True, False): b58decode,
+        (True, True): b58decode_check
+    }[(args.decode, args.check)]
 
-def hash_160_to_bc_address(h160, version="\x00"):
-    if not have_crypto:
-        return ''
-    vh160 = version + h160
-    h3 = hashlib.sha256(hashlib.sha256(vh160).digest()).digest()
-    addr = vh160 + h3[0:4]
-    return b58encode(addr)
+    data = buffer(args.file).read().rstrip(b'\n')
 
+    try:
+        result = fun(data)
+    except Exception as e:
+        sys.exit(e)
 
-def bc_address_to_hash_160(addr):
-    bytes = b58decode(addr, 25)
-    return bytes[1:21]
+    if not isinstance(result, bytes):
+        result = result.encode('ascii')
+
+    stdout.write(result)
+
 
 if __name__ == '__main__':
-    x = '005cc87f4a3fdfe3a2346b6953267ca867282630d3f9b78e64'.decode('hex_codec')
-    encoded = b58encode(x)
-    print encoded, '19TbMSWwHvnxAKy12iNm3KdbGfzfaMFViT'
-    print b58decode(encoded, len(x)).encode('hex_codec'), x.encode('hex_codec')
+    main()
