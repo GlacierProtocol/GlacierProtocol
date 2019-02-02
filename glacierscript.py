@@ -36,7 +36,7 @@ import json
 from decimal import Decimal
 import pipes
 
-# Taken from Gavin Andresen's "bitcointools" python library (exact link in source file)
+# Taken from https://github.com/keis/base58
 from base58 import b58encode
 
 SATOSHI_PLACES = Decimal("0.00000001")
