@@ -424,10 +424,6 @@ def teach_address_to_wallet(source_address, redeem_script, privkeys):
     privkeys: List<string> The private keys you wish to sign with
     """
 
-    # First teach the wallet about each of our privkeys
-    for key in privkeys:
-        bitcoin_cli_call("importprivkey", key)
-
     # If address is p2wsh-in-p2sh, then the user-provided
     # redeem_script is actually witnessScript, and I need to get the
     # redeemScript from `decodescript`.
@@ -450,6 +446,10 @@ def teach_address_to_wallet(source_address, redeem_script, privkeys):
     if not all(result["success"] for result in results) or \
        any("warnings" in result for result in results):
         raise Exception("Problem importing address to wallet")
+
+    # Teach the wallet about each of our privkeys
+    for key in privkeys:
+        bitcoin_cli_call("importprivkey", key)
 
 
 def sign_transaction(source_address, keys, redeem_script, unsigned_hex, input_txs):
