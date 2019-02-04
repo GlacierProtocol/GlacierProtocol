@@ -708,9 +708,9 @@ def deposit_interactive(m, n, dice_seed_length=62, rng_seed_length=20, p2wsh=Fal
     print("Private keys created.")
     print("Generating {0}-of-{1} cold storage address...\n".format(m, n))
 
-    addresses = [get_pubkey_for_wif_privkey(key) for key in keys]
+    pubkeys = [get_pubkey_for_wif_privkey(key) for key in keys]
     address_type = 'bech32' if p2wsh else 'p2sh-segwit'
-    results = addmultisigaddress(m, addresses, address_type)
+    results = addmultisigaddress(m, pubkeys, address_type)
 
     print("Private keys:")
     for idx, key in enumerate(keys):
