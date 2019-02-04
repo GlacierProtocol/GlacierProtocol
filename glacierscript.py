@@ -357,8 +357,8 @@ def addmultisigaddress(m, pubkeys, address_type='p2sh-segwit'):
     m: <int> number of multisig keys required for withdrawal
     pubkeys: List<string> hex pubkeys for each of the N keys
     """
-    address_string = json.dumps(pubkeys)
-    return bitcoin_cli_json("addmultisigaddress", str(m), address_string, "", address_type)
+    pubkey_string = json.dumps(pubkeys)
+    return bitcoin_cli_json("addmultisigaddress", str(m), pubkey_string, "", address_type)
 
 
 def validate_address(source_address, redeem_script):
