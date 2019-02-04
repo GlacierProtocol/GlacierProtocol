@@ -323,8 +323,8 @@ def require_minimum_bitcoind_version(min_version):
         print("ERROR: Your bitcoind version is too old. You have {}, I need {} or newer. Exiting...".format(networkinfo["version"], min_version))
         sys.exit()
 
-def get_address_for_wif_privkey(privkey):
-    """A method for retrieving the address associated with a private key from bitcoin core
+def get_pubkey_for_wif_privkey(privkey):
+    """A method for retrieving the pubkey associated with a private key from bitcoin core
        <privkey> - a bitcoin private key in WIF format"""
 
     # Bitcoin Core doesn't have an RPC for "get the addresses associated w/this private key"
@@ -708,7 +708,7 @@ def deposit_interactive(m, n, dice_seed_length=62, rng_seed_length=20, p2wsh=Fal
     print("Private keys created.")
     print("Generating {0}-of-{1} cold storage address...\n".format(m, n))
 
-    addresses = [get_address_for_wif_privkey(key) for key in keys]
+    addresses = [get_pubkey_for_wif_privkey(key) for key in keys]
     address_type = 'bech32' if p2wsh else 'p2sh-segwit'
     results = addmultisigaddress(m, addresses, address_type)
 
