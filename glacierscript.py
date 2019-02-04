@@ -349,15 +349,15 @@ def get_pubkey_for_wif_privkey(privkey):
     return validate_output["pubkey"]
 
 
-def addmultisigaddress(m, addresses_or_pubkeys, address_type='p2sh-segwit'):
+def addmultisigaddress(m, pubkeys, address_type='p2sh-segwit'):
     """
     Call `bitcoin-cli addmultisigaddress`
     returns => JSON response from bitcoin-cli
 
     m: <int> number of multisig keys required for withdrawal
-    addresses_or_pubkeys: List<string> either addresses or hex pubkeys for each of the N keys
+    pubkeys: List<string> hex pubkeys for each of the N keys
     """
-    address_string = json.dumps(addresses_or_pubkeys)
+    address_string = json.dumps(pubkeys)
     return bitcoin_cli_json("addmultisigaddress", str(m), address_string, "", address_type)
 
 
