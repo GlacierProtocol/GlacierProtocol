@@ -91,6 +91,10 @@ def btc_to_satoshi(btc):
 #
 ################################################################################################
 
+def verbose(content):
+    if verbose_mode: print content
+
+
 def run_subprocess(exe, *args):
     """
     Run a subprocess (bitcoind or bitcoin-cli)
@@ -383,10 +387,6 @@ def get_utxos(tx, address):
             utxos.append(output)
 
     return utxos
-
-
-def verbose(content):
-    if verbose_mode: print content
 
 
 def create_unsigned_transaction(source_address, destinations, redeem_script, input_txs):

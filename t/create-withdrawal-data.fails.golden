@@ -29,6 +29,6 @@ Satoshis per vbyte: Traceback (most recent call last):
     source_address, destinations, redeem_script, input_txs)
   File "../../glacierscript.py", line 424, in create_unsigned_transaction
     json.dumps(destinations)).strip()
-  File "../../glacierscript.py", line 124, in bitcoin_cli_checkoutput
+  File "../../glacierscript.py", line 128, in bitcoin_cli_checkoutput
     if retcode != 0: raise subprocess.CalledProcessError(retcode, cmd_list, output=output)
 subprocess.CalledProcessError: Command '['bitcoin-cli', '-testnet', '-rpcport=18340', '-datadir=bitcoin-test-data', 'createrawtransaction', '[{"vout": 1, "txid": "e0e9bb25fb873c4caccdc8ab743c4350310031f2cc077bb90c3f495458860157"}]', '{"2N93du8YobdgsHyu3qgBvSyhGUT52utMNeA": 0, "myP4xdJNwAW9iMakvCjnozg814ewgn8apx": 0}']' returned non-zero exit status 5
