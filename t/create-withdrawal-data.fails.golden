@@ -21,14 +21,14 @@ How many private keys will you be signing this transaction with?
 #: Key #1: Key #2: 
 Enter fee rate.
 Satoshis per vbyte: Traceback (most recent call last):
-  File "../../glacierscript.py", line 884, in <module>
+  File "../../glacierscript.py", line 880, in <module>
     withdraw_interactive()
-  File "../../glacierscript.py", line 766, in withdraw_interactive
+  File "../../glacierscript.py", line 762, in withdraw_interactive
     source_address, keys, addresses, redeem_script, txs)
-  File "../../glacierscript.py", line 492, in get_fee_interactive
+  File "../../glacierscript.py", line 488, in get_fee_interactive
     source_address, destinations, redeem_script, input_txs)
-  File "../../glacierscript.py", line 428, in create_unsigned_transaction
+  File "../../glacierscript.py", line 424, in create_unsigned_transaction
     json.dumps(destinations)).strip()
-  File "../../glacierscript.py", line 128, in bitcoin_cli_checkoutput
+  File "../../glacierscript.py", line 124, in bitcoin_cli_checkoutput
     if retcode != 0: raise subprocess.CalledProcessError(retcode, cmd_list, output=output)
 subprocess.CalledProcessError: Command '['bitcoin-cli', '-testnet', '-rpcport=18340', '-datadir=bitcoin-test-data', 'createrawtransaction', '[{"vout": 1, "txid": "e0e9bb25fb873c4caccdc8ab743c4350310031f2cc077bb90c3f495458860157"}]', '{"2N93du8YobdgsHyu3qgBvSyhGUT52utMNeA": 0, "myP4xdJNwAW9iMakvCjnozg814ewgn8apx": 0}']' returned non-zero exit status 5

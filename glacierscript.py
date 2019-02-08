@@ -35,7 +35,6 @@ import subprocess
 import json
 from decimal import Decimal
 import pipes
-import StringIO
 
 # Taken from Gavin Andresen's "bitcointools" python library (exact link in source file)
 from base58 import b58encode
@@ -102,14 +101,11 @@ def run_subprocess(exe, *args):
     """
     cmd_list = [exe] + cli_args + list(args)
     verbose("bitcoin cli call:\n  {0}\n".format(" ".join(pipes.quote(x) for x in cmd_list)))
-    output = StringIO.StringIO()
     pipe = subprocess.Popen(cmd_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1)
-    with pipe.stdout:
-        for line in iter(pipe.stdout.readline, b''):
-            output.write(line)
-    retcode = pipe.wait()
-    verbose("bitcoin cli call return code: {0}  output:\n  {1}\n".format(retcode, output.getvalue()))
-    return (cmd_list, retcode, output.getvalue())
+    output, _ = pipe.communicate()
+    retcode = pipe.returncode
+    verbose("bitcoin cli call return code: {0}  output:\n  {1}\n".format(retcode, output))
+    return (cmd_list, retcode, output)
 
 
 def bitcoin_cli_call(*args):
