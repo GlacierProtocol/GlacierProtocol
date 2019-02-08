@@ -92,7 +92,7 @@ def btc_to_satoshi(btc):
 ################################################################################################
 
 def verbose(content):
-    if verbose_mode: print content
+    if verbose_mode: print(content)
 
 
 def run_subprocess(exe, *args):
