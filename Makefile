@@ -58,12 +58,13 @@ test : $(all-tests)
 OUTPUT = $(addsuffix .out, $(basename $<))
 RUNDIR = testrun/$(notdir $@)
 
+compare_program = diff -q
 
 %.test : %.run %.golden glacierscript.py prereqs
 	$(cleanup_bitcoind)
 	@mkdir -p $(RUNDIR)/bitcoin-test-data
 	cd $(RUNDIR) && ../../$< $(compteur) 2>&1 > ../../$(OUTPUT)
-	@diff -q $(word 2, $?) $(OUTPUT) || \
+	@$(compare_program) $(word 2, $?) $(OUTPUT) || \
 	  (echo "Test $@ failed" && exit 1)
 	$(cleanup_bitcoind)
 	@rm -rf $(RUNDIR)
