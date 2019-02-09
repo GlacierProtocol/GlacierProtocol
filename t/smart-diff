@@ -1,0 +1,42 @@
+#!/usr/bin/env python3
+
+################################################################################################
+#
+# smart-diff:
+#
+# Diff two test files ("golden" or expected output vs "out" or actual output),
+# where the golden file is interpreted as a regexp.
+#
+################################################################################################
+
+import difflib
+import os
+import sys
+
+if len(sys.argv) != 3:
+    sys.exit("Usage: {} [golden] [out]".format(sys.argv[0]))
+
+golden_filename = sys.argv[1]
+out_filename = sys.argv[2]
+
+
+def plain_diff(golden_filename, out_filename):
+    with open(golden_filename, 'r') as golden:
+        golden_lines = golden.readlines()
+    with open(out_filename, 'r') as out:
+        out_lines = out.readlines()
+
+    diff = difflib.unified_diff(golden_lines, out_lines,
+                                fromfile=golden_filename,
+                                tofile=out_filename)
+
+    diffs = list(diff)
+    if diffs:
+        for d in diffs: sys.stderr.write(d)
+        return 1
+
+    return 0
+
+
+sys.exit(plain_diff(golden_filename, out_filename))
+    

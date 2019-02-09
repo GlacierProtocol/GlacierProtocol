@@ -74,6 +74,9 @@ endef
 %.test : %.run %.golden glacierscript.py prereqs
 	$(call test_recipe, diff -q)
 
+%.test : %.run %.golden.re glacierscript.py prereqs
+	$(call test_recipe, t/smart-diff)
+
 prereqs:
 	@which bitcoind > /dev/null || (echo 'Error: unable to find bitcoind'; exit 1)
 	@which zbarimg > /dev/null || (echo 'Error: unable to find zbarimg (from package zbar-tools)'; exit 1)
