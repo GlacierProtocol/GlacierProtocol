@@ -9,15 +9,15 @@
 #
 ################################################################################################
 
+import argparse
 import difflib
 import os
 import sys
 
-if len(sys.argv) != 3:
-    sys.exit("Usage: {} [golden] [out]".format(sys.argv[0]))
-
-golden_filename = sys.argv[1]
-out_filename = sys.argv[2]
+parser = argparse.ArgumentParser()
+parser.add_argument('golden_filename')
+parser.add_argument('out_filename')
+args = parser.parse_args()
 
 
 def plain_diff(golden_filename, out_filename):
@@ -38,5 +38,5 @@ def plain_diff(golden_filename, out_filename):
     return 0
 
 
-sys.exit(plain_diff(golden_filename, out_filename))
+sys.exit(plain_diff(args.golden_filename, args.out_filename))
     
