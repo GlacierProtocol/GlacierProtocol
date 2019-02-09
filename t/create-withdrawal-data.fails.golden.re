@@ -21,7 +21,7 @@ How many private keys will you be signing this transaction with?
 #: Key #1: Key #2: 
 Enter fee rate.
 Satoshis per vbyte: Traceback (most recent call last):
-  File "../../glacierscript.py", line 879, in <module>
+  File "../../glacierscript.py", line 879, in <[<]>module>
     withdraw_interactive()
   File "../../glacierscript.py", line 762, in withdraw_interactive
     source_address, keys, addresses, redeem_script, txs)
