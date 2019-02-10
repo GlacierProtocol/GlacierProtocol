@@ -493,13 +493,12 @@ def find_pubkeys(source_address):
         return out["embedded"]["pubkeys"] # for segwit addresses
 
 
-def sign_transaction(source_address, keys, redeem_script, unsigned_hex, input_txs):
+def sign_transaction(source_address, redeem_script, unsigned_hex, input_txs):
     """
     Creates a signed transaction
     output => dictionary {"hex": transaction <string>, "complete": <boolean>}
 
     source_address: <string> input_txs will be filtered for utxos to this source address
-    keys: List<string> The private keys you wish to sign with
     redeem_script: <string>
     unsigned_hex: <string> The unsigned transaction, in hex format
     input_txs: List<dict> A list of input transactions to use (bitcoind decoded format)
@@ -554,7 +553,7 @@ def get_fee_interactive(source_address, keys, destinations, redeem_script, input
         unsigned_tx = create_unsigned_transaction(
             source_address, destinations, redeem_script, input_txs)
 
-        signed_tx = sign_transaction(source_address, keys,
+        signed_tx = sign_transaction(source_address,
                                      redeem_script, unsigned_tx, input_txs)
 
         decoded_tx = bitcoin_cli_json("decoderawtransaction", signed_tx["hex"])
@@ -888,7 +887,7 @@ def withdraw_interactive():
     unsigned_tx = create_unsigned_transaction(
         source_address, addresses, redeem_script, txs)
 
-    signed_tx = sign_transaction(source_address, keys,
+    signed_tx = sign_transaction(source_address,
                                  redeem_script, unsigned_tx, txs)
 
     print("\nSufficient private keys to execute transaction?")
