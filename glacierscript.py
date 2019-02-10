@@ -35,6 +35,7 @@ import subprocess
 import json
 from decimal import Decimal
 import pipes
+from collections import OrderedDict
 
 # Taken from https://github.com/keis/base58
 from base58 import b58encode
@@ -697,7 +698,7 @@ def withdraw_interactive():
     approve = False
 
     while not approve:
-        addresses = {}
+        addresses = OrderedDict()
 
         print "\nYou will need to enter several pieces of information to create a withdrawal transaction."
         print "\n\n*** PLEASE BE SURE TO ENTER THE CORRECT DESTINATION ADDRESS ***\n"
