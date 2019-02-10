@@ -819,9 +819,7 @@ def withdraw_interactive():
         while len(keys) < key_count:
             key = input("Key #{0}: ".format(len(keys) + 1))
             keys.append(key)
-
-        # Teach the wallet about each of our privkeys
-        for key in keys:
+            # Teach the wallet about each of our privkeys
             bitcoin_cli_checkcall("importprivkey", key)
 
         ###### fees, amount, and change #######
