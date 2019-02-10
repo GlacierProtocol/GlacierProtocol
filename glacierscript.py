@@ -414,6 +414,41 @@ def create_unsigned_transaction(source_address, destinations, redeem_script, inp
     return tx_unsigned_hex
 
 
+def teach_address_to_wallet(source_address, redeem_script, privkeys):
+    """
+    Teaches the bitcoind wallet about our multisig address, so it can
+    use that knowledge to sign the transaction we're about to create.
+
+    source_address: <string> multisig address
+    redeem_script: <string>
+    privkeys: List<string> The private keys you wish to sign with
+    """
+
+    # First teach the wallet about each of our privkeys
+    for key in privkeys:
+        bitcoin_cli_call("importprivkey", key)
+
+    # If address is p2wsh-in-p2sh, then the user-provided
+    # redeem_script is actually witnessScript, and I need to get the
+    # redeemScript from `decodescript`.
+
+    decoded_script = bitcoin_cli_json("decodescript", redeem_script)
+
+    import_this = {
+        "scriptPubKey": { "address": source_address },
+        "timestamp": "now",
+        "watchonly": True # to avoid warning about "Some private keys are missing[...]"
+    }
+    if decoded_script["p2sh"] == source_address:
+        import_this["redeemscript"] = redeem_script
+    else:
+        # segwit (either p2wsh or p2sh-in-p2wsh)
+        import_this["witnessscript"] = redeem_script
+        if source_address == decoded_script["segwit"]["p2sh-segwit"]:
+            import_this["redeemscript"] = decoded_script["segwit"]["hex"]
+    results = bitcoin_cli_json("importmulti", json.dumps([import_this]))
+
+
 def sign_transaction(source_address, keys, redeem_script, unsigned_hex, input_txs):
     """
     Creates a signed transaction
@@ -441,9 +476,10 @@ def sign_transaction(source_address, keys, redeem_script, unsigned_hex, input_tx
                 "redeemScript": redeem_script
             })
 
+    teach_address_to_wallet(source_address, redeem_script, keys)
     signed_tx = bitcoin_cli_json(
-        "signrawtransactionwithkey",
-        unsigned_hex, json.dumps(keys), json.dumps(inputs))
+        "signrawtransactionwithwallet",
+        unsigned_hex, json.dumps(inputs))
     return signed_tx
 
 
