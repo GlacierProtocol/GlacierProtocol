@@ -819,6 +819,10 @@ def withdraw_interactive():
             keys.append(key)
             # Teach the wallet about this key
             pubkey = get_pubkey_for_wif_privkey(key)
+            if pubkey not in pubkeys:
+                print("ERROR: that key does not belong to this source address, exiting...")
+                sys.exit()
+
 
         ###### fees, amount, and change #######
 
