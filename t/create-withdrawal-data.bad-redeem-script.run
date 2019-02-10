@@ -1,0 +1,14 @@
+#!/bin/bash
+set -e
+
+../../glacierscript.py --testnet=$1 create-withdrawal-data << INPUT
+y
+y
+y
+y
+y
+y
+2MvQKEWTdtH7uM5C72quuMukWNFkFYjm34N
+5221035a0cf2b8ad46945154d80b339f730ac0cdbc39a95550a95821adf6df6e6e3c9421038f339e9149fda8496360d689b5d6b4d66f8e64e28b1c89846efd0831512eab882101442945263f31819baf5799dc9595eba49b8f6674dadf21189f717abd630ab15053ae
+mxBQD1QAYpwiudaCJdRhE9QSW9cokafJ99
+INPUT

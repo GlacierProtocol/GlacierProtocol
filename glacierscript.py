@@ -357,6 +357,25 @@ def addmultisigaddress(m, addresses_or_pubkeys, address_type='p2sh-segwit'):
     address_string = json.dumps(addresses_or_pubkeys)
     return bitcoin_cli_json("addmultisigaddress", str(m), address_string, "", address_type)
 
+
+def validate_address(source_address, redeem_script):
+    """
+    Given a source cold storage address and redemption script,
+    make sure the redeem script is valid and matches the address.
+    """
+    decoded_script = bitcoin_cli_json("decodescript", redeem_script)
+    if decoded_script["type"] != "multisig":
+        print("ERROR: Unrecognized redemption script. Doublecheck for typos. Exiting...")
+        sys.exit()
+    ok_addresses = [decoded_script["p2sh"]]
+    if "segwit" in decoded_script:
+        ok_addresses.append(decoded_script["segwit"]["p2sh-segwit"])
+        ok_addresses.extend(decoded_script["segwit"]["addresses"])
+    if source_address not in ok_addresses:
+        print("ERROR: Redemption script does not match cold storage address. Doublecheck for typos. Exiting...")
+        sys.exit()
+
+
 def get_utxos(tx, address):
     """
     Given a transaction, find all the outputs that were sent to an address
@@ -734,6 +753,8 @@ def withdraw_interactive():
         addresses[source_address] = 0
 
         redeem_script = input("\nRedemption script for source cold storage address: ")
+
+        validate_address(source_address, redeem_script)
 
         dest_address = input("\nDestination address: ")
         addresses[dest_address] = 0
