@@ -27,7 +27,6 @@
 import argparse
 from collections import OrderedDict
 from decimal import Decimal
-import hashlib
 from hashlib import sha256, md5
 import json
 import os
