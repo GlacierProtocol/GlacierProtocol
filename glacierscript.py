@@ -24,18 +24,18 @@
 ################################################################################################
 
 # standard Python libraries
-import time
 import argparse
-import os
-import sys
+from collections import OrderedDict
+from decimal import Decimal
 import hashlib
 from hashlib import sha256, md5
-import random
-import subprocess
 import json
-from decimal import Decimal
+import os
+import random
 import shlex
-from collections import OrderedDict
+import subprocess
+import sys
+import time
 
 # Taken from https://github.com/keis/base58
 from base58 import b58encode
