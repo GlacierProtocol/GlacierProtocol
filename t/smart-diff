@@ -33,7 +33,6 @@ import sys
 parser = argparse.ArgumentParser()
 parser.add_argument('golden_filename', help="input1: expected output")
 parser.add_argument('out_filename', help="input2: actual output")
-parser.add_argument('-v', '--verbose', action='store_true', help='show all diffs')
 parser.add_argument('--selftest', action='store_true', help="run this program's self-test")
 args = parser.parse_args()
 
@@ -122,11 +121,7 @@ with open(args.golden_filename, 'rt') as golden:
             out_contents = out_contents[match.end():]
         else:
             # Bad! Print appropriate error message
-            if args.verbose:
-                sys.stderr.write("Line {} of {} failed to match {}\n".format(golden_linenum, args.golden_filename, args.out_filename))
-            else:
-                sys.stderr.write("Files {} and {} differ\n".format(args.golden_filename, args.out_filename))
-                sys.stderr.write("To show diffs: {} --verbose {} {}\n".format(sys.argv[0], args.golden_filename, args.out_filename))
+            sys.stderr.write("Line {} of {} failed to match {}\n".format(golden_linenum, args.golden_filename, args.out_filename))
             sys.exit(1)
 
 # Make sure out_contents has nothing extra!
