@@ -436,14 +436,13 @@ def create_unsigned_transaction(source_address, destinations, redeem_script, inp
     return tx_unsigned_hex
 
 
-def teach_address_to_wallet(source_address, redeem_script, privkeys):
+def teach_address_to_wallet(source_address, redeem_script):
     """
     Teaches the bitcoind wallet about our multisig address, so it can
     use that knowledge to sign the transaction we're about to create.
 
     source_address: <string> multisig address
     redeem_script: <string>
-    privkeys: List<string> The private keys you wish to sign with
     """
 
     # If address is p2wsh-in-p2sh, then the user-provided
@@ -468,10 +467,6 @@ def teach_address_to_wallet(source_address, redeem_script, privkeys):
     if not all(result["success"] for result in results) or \
        any("warnings" in result for result in results):
         raise Exception("Problem importing address to wallet")
-
-    # Teach the wallet about each of our privkeys
-    for key in privkeys:
-        bitcoin_cli_call("importprivkey", key)
 
 
 def sign_transaction(source_address, keys, redeem_script, unsigned_hex, input_txs):
@@ -501,7 +496,10 @@ def sign_transaction(source_address, keys, redeem_script, unsigned_hex, input_tx
                 "redeemScript": redeem_script
             })
 
-    teach_address_to_wallet(source_address, redeem_script, keys)
+    teach_address_to_wallet(source_address, redeem_script)
+    # Teach the wallet about each of our privkeys
+    for key in keys:
+        bitcoin_cli_call("importprivkey", key)
     signed_tx = bitcoin_cli_json(
         "signrawtransactionwithwallet",
         unsigned_hex, json.dumps(inputs))
