@@ -525,7 +525,7 @@ def sign_transaction(source_address, redeem_script, unsigned_hex, input_txs):
     return signed_tx
 
 
-def get_fee_interactive(source_address, keys, destinations, redeem_script, input_txs):
+def get_fee_interactive(source_address, destinations, redeem_script, input_txs):
     """
     Returns a recommended transaction fee, given market fee data provided by the user interactively
     Because fees tend to be a function of transaction size, we build the transaction in order to
@@ -534,7 +534,6 @@ def get_fee_interactive(source_address, keys, destinations, redeem_script, input
 
     Parameters:
       source_address: <string> input_txs will be filtered for utxos to this source address
-      keys: A list of signing keys
       destinations: {address <string>: amount<string>} dictionary mapping destination addresses to amount in BTC
       redeem_script: String
       input_txs: List<dict> List of input transactions in dictionary form (bitcoind decoded format)
@@ -825,7 +824,7 @@ def withdraw_interactive():
 
         input_amount = utxo_sum
         fee = get_fee_interactive(
-            source_address, keys, addresses, redeem_script, txs)
+            source_address, addresses, redeem_script, txs)
         # Got this far
         if fee > input_amount:
             print("ERROR: Your fee is greater than the sum of your unspent transactions.  Try using larger unspent transactions. Exiting...")
