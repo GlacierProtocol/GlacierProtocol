@@ -414,10 +414,10 @@ def create_unsigned_transaction(source_address, destinations, redeem_script, inp
         txid = tx["txid"]
 
         for utxo in utxos:
-            inputs.append({
-                "txid": txid,
-                "vout": int(utxo["n"])
-            })
+            inputs.append(OrderedDict([
+                ("txid", txid),
+                ("vout", int(utxo["n"]))
+            ]))
 
     tx_unsigned_hex = bitcoin_cli_checkoutput(
         "createrawtransaction",
