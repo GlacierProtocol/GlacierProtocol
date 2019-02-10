@@ -589,17 +589,12 @@ def unchunk(string):
     return string.replace(" ", "")
 
 
-def format_chunks(size, string):
+def chunkstring(string, length):
     """
-    Splits a string into chunks of [size] characters, for easy human readability
+    Splits a string into chunks of [length] characters, for easy human readability
+    Source: https://stackoverflow.com/a/18854817/11031317
     """
-    tail = ""
-    remainder = len(string) % size
-    arr = [string[size * i: size * i + size] for i in range(len(string) / size)]
-    body = " ".join(arr)
-    if remainder > 0:
-        tail = string[-remainder:]
-    return body + " " + tail
+    return (string[0+i:length+i] for i in range(0, len(string), length))
 
 
 def entropy(n, length):
@@ -618,7 +613,7 @@ def entropy(n, length):
             "xxd -l {} -p /dev/random".format(length), shell=True)
         idx += 1
         seed = seed.replace('\n', '')
-        print "Computer entropy #{0}: {1}".format(idx, format_chunks(4, seed))
+        print("Computer entropy #{0}: {1}".format(idx, " ".join(chunkstring(seed, 4))))
 
 
 ################################################################################################

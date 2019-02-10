@@ -4,7 +4,7 @@ Are you running this on a computer WITHOUT a network connection of any kind? (y/
 Making 4 random data strings....
 If strings don't appear right away, please continually move your mouse cursor. These movements generate entropy which is used to create random data.
 
-Computer entropy #1: <([0-9a-f]{4} ){10}>
-Computer entropy #2: <([0-9a-f]{4} ){10}>
-Computer entropy #3: <([0-9a-f]{4} ){10}>
-Computer entropy #4: <([0-9a-f]{4} ){10}>
+Computer entropy #1:<( [0-9a-f]{4}){10}>
+Computer entropy #2:<( [0-9a-f]{4}){10}>
+Computer entropy #3:<( [0-9a-f]{4}){10}>
+Computer entropy #4:<( [0-9a-f]{4}){10}>
