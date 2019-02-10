@@ -119,6 +119,13 @@ def bitcoin_cli_call(*args):
     _, retcode, _ = run_subprocess("bitcoin-cli", *args)
     return retcode
 
+def bitcoin_cli_checkcall(*args):
+    """
+    Run `bitcoin-cli`, ensure no error
+    """
+    cmd_list, retcode, output = run_subprocess("bitcoin-cli", *args)
+    if retcode != 0: raise subprocess.CalledProcessError(retcode, cmd_list, output=output)
+
 
 def bitcoin_cli_checkoutput(*args):
     """
@@ -335,7 +342,7 @@ def get_pubkey_for_wif_privkey(privkey):
     label = hash_sha256(privkey)
 
     ensure_bitcoind_running()
-    bitcoin_cli_call("importprivkey", privkey, label)
+    bitcoin_cli_checkcall("importprivkey", privkey, label)
     addresses = bitcoin_cli_json("getaddressesbylabel", label)
 
     # getaddressesbylabel returns multiple addresses associated with
@@ -499,7 +506,7 @@ def sign_transaction(source_address, keys, redeem_script, unsigned_hex, input_tx
     teach_address_to_wallet(source_address, redeem_script)
     # Teach the wallet about each of our privkeys
     for key in keys:
-        bitcoin_cli_call("importprivkey", key)
+        bitcoin_cli_checkcall("importprivkey", key)
     signed_tx = bitcoin_cli_json(
         "signrawtransactionwithwallet",
         unsigned_hex, json.dumps(inputs))
