@@ -343,7 +343,10 @@ def get_address_for_wif_privkey(privkey):
     # pubkey to addmultisigaddress, it doesn't matter which one we
     # choose; they are all associated with the same pubkey.
 
-    return next(iter(addresses))
+    address = next(iter(addresses))
+
+    validate_output = bitcoin_cli_json("getaddressinfo", address)
+    return validate_output["pubkey"]
 
 
 def addmultisigaddress(m, addresses_or_pubkeys, address_type='p2sh-segwit'):
