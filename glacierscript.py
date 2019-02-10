@@ -314,9 +314,8 @@ def ensure_bitcoind_running():
     while times <= 20:
         times += 1
         if bitcoin_cli_call("getnetworkinfo") == 0:
-            # getaddressesbylabel API new in v0.17.0;
-            # signrawtransaction API changed in v0.17.0
-            require_minimum_bitcoind_version(170000)
+            # getaddressinfo API changed in v0.18.0
+            require_minimum_bitcoind_version(180000)
             return
         time.sleep(0.5)
 
@@ -477,6 +476,21 @@ def teach_address_to_wallet(source_address, redeem_script):
     if not all(result["success"] for result in results) or \
        any("warnings" in result for result in results):
         raise Exception("Problem importing address to wallet")
+
+
+def find_pubkeys(source_address):
+    """
+    Return a list of the pubkeys associated with the supplied multisig address.
+
+    Assumes this address has already been imported to the wallet using `importmulti`
+
+    source_address: <string> multisig address
+    """
+    out = bitcoin_cli_json("getaddressinfo", source_address)
+    if "pubkeys" in out:
+        return out["pubkeys"] # for non-segwit addresses
+    else:
+        return out["embedded"]["pubkeys"] # for segwit addresses
 
 
 def sign_transaction(source_address, keys, redeem_script, unsigned_hex, input_txs):
@@ -761,6 +775,7 @@ def withdraw_interactive():
 
         validate_address(source_address, redeem_script)
         teach_address_to_wallet(source_address, redeem_script)
+        pubkeys = find_pubkeys(source_address)
 
         dest_address = input("\nDestination address: ")
         addresses[dest_address] = 0
