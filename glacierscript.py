@@ -589,7 +589,7 @@ def unchunk(string):
     return string.replace(" ", "")
 
 
-def chunkstring(string, length):
+def chunk_string(string, length):
     """
     Splits a string into chunks of [length] characters, for easy human readability
     Source: https://stackoverflow.com/a/18854817/11031317
@@ -613,7 +613,7 @@ def entropy(n, length):
             "xxd -l {} -p /dev/random".format(length), shell=True)
         idx += 1
         seed = seed.replace('\n', '')
-        print("Computer entropy #{0}: {1}".format(idx, " ".join(chunkstring(seed, 4))))
+        print("Computer entropy #{0}: {1}".format(idx, " ".join(chunk_string(seed, 4))))
 
 
 ################################################################################################
