@@ -1,0 +1,11 @@
+#!/bin/bash
+set -e
+
+../../glacierscript.py --testnet=$1 entropy --num-keys 4 << INPUT 2>&1
+y
+y
+y
+y
+y
+y
+INPUT

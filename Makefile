@@ -59,16 +59,23 @@ OUTPUT = $(addsuffix .out, $(basename $<))
 RUNDIR = testrun/$(notdir $@)
 
 
-%.test : %.run %.golden glacierscript.py prereqs
+define test_recipe =
 	$(cleanup_bitcoind)
 	@mkdir -p $(RUNDIR)/bitcoin-test-data
 	cd $(RUNDIR) && ../../$< $(compteur) 2>&1 > ../../$(OUTPUT)
-	@diff -q $(word 2, $?) $(OUTPUT) || \
+	@$(1) $(word 2, $?) $(OUTPUT) || \
 	  (echo "Test $@ failed" && exit 1)
 	$(cleanup_bitcoind)
 	@rm -rf $(RUNDIR)
 	@rm $(OUTPUT)
+endef
 
+
+%.test : %.run %.golden glacierscript.py prereqs
+	$(call test_recipe, diff -q)
+
+%.test : %.run %.golden.re glacierscript.py prereqs
+	$(call test_recipe, t/smart-diff)
 
 prereqs:
 	@which bitcoind > /dev/null || (echo 'Error: unable to find bitcoind'; exit 1)
