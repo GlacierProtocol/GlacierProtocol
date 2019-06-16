@@ -30,7 +30,6 @@ import os
 import sys
 import hashlib
 from hashlib import sha256, md5
-import random
 import subprocess
 import json
 from decimal import Decimal
@@ -335,14 +334,7 @@ def get_address_for_wif_privkey(privkey):
     """A method for retrieving the address associated with a private key from bitcoin core
        <privkey> - a bitcoin private key in WIF format"""
 
-    # Bitcoin Core doesn't have an RPC for "get the addresses associated w/this private key"
-    # just "get the addresses associated with this label"
-    # where "label" corresponds to an arbitrary tag we can associate with each private key
-    # so, we'll generate a unique "label" to attach to this private key.
-    #
-    # we're running on a fresh bitcoind installation in the Glacier Protocol, so there's no
-    # meaningful risk here of colliding with previously-existing labels.
-    label = str(random.randint(0, 2**128))
+    label = hash_sha256(privkey)
 
     ensure_bitcoind_running()
     bitcoin_cli_call("importprivkey", privkey, label)
