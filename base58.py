@@ -37,18 +37,11 @@ __version__ = '1.0.3'
 alphabet = b'123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 
 
-if bytes == str:  # python2
-    iseq, bseq, buffer = (
-        lambda s: map(ord, s),
-        lambda s: ''.join(map(chr, s)),
-        lambda s: s,
-    )
-else:  # python3
-    iseq, bseq, buffer = (
-        lambda s: s,
-        bytes,
-        lambda s: s.buffer,
-    )
+iseq, bseq, buffer = (
+    lambda s: s,
+    bytes,
+    lambda s: s.buffer,
+)
 
 
 def scrub_input(v):
