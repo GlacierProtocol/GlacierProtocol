@@ -36,10 +36,8 @@ __version__ = '1.0.3'
 # 58 character alphabet used
 alphabet = b'123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 
-def b58encode_int(i, default_one=True):
+def b58encode_int(i):
     '''Encode an integer using Base58'''
-    if not i and default_one:
-        return alphabet[0:1]
     string = b""
     while i:
         i, idx = divmod(i, 58)
@@ -58,7 +56,7 @@ def b58encode(v):
         acc += p * c
         p = p << 8
 
-    result = b58encode_int(acc, default_one=False)
+    result = b58encode_int(acc)
 
     return (alphabet[0:1] * nPad + result)
 
