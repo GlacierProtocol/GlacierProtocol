@@ -36,18 +36,6 @@ __version__ = '1.0.3'
 # 58 character alphabet used
 alphabet = b'123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 
-def scrub_input(v):
-    if isinstance(v, str) and not isinstance(v, bytes):
-        v = v.encode('ascii')
-
-    if not isinstance(v, bytes):
-        raise TypeError(
-            "a bytes-like object is required (also str), not '%s'" %
-            type(v).__name__)
-
-    return v
-
-
 def b58encode_int(i, default_one=True):
     '''Encode an integer using Base58'''
     if not i and default_one:
@@ -61,8 +49,6 @@ def b58encode_int(i, default_one=True):
 
 def b58encode(v):
     '''Encode a string using Base58'''
-    v = scrub_input(v)
-
     nPad = len(v)
     v = v.lstrip(b'\0')
     nPad -= len(v)
