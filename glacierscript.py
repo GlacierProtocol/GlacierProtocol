@@ -37,7 +37,7 @@ import sys
 import time
 
 # Taken from https://github.com/keis/base58
-from base58 import b58encode
+from base58 import b58encode_check
 
 SATOSHI_PLACES = Decimal("0.00000001")
 
@@ -282,16 +282,8 @@ def hex_private_key_to_WIF_private_key(hex_key):
     Converts a raw 256-bit hex private key to WIF format
     returns => <string> in hex format
     """
-
     hex_key_with_prefix = wif_prefix + hex_key + "01"
-
-    h1 = hash_sha256(bytes.fromhex(hex_key_with_prefix))
-    h2 = hash_sha256(bytes.fromhex(h1))
-    checksum = h2[0:8]
-
-    wif_key_before_base58Check = hex_key_with_prefix + checksum
-    wif_key = b58encode(bytes.fromhex(wif_key_before_base58Check))
-
+    wif_key = b58encode_check(bytes.fromhex(hex_key_with_prefix))
     return wif_key.decode('ascii')
 
 
