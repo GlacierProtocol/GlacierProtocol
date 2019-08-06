@@ -395,9 +395,7 @@ def create_unsigned_transaction(source_address, destinations, redeem_script, inp
     ensure_bitcoind_running()
 
     # prune destination addresses sent 0 btc
-    for address, value in list(destinations.items()):
-        if value == "0":
-            del destinations[address]
+    destinations = OrderedDict((key, val) for key, val in destinations.items() if val != '0')
 
     # For each UTXO used as input, we need the txid and vout index to generate a transaction
     inputs = []
