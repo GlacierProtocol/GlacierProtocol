@@ -113,7 +113,7 @@ with open(args.out_filename, 'rt') as out:
     out_contents = out.read()
 
 with open(args.golden_filename, 'rt') as golden:
-    for golden_linenum, golden_line in enumerate(golden):
+    for golden_linenum, golden_line in enumerate(golden, start=1):
         golden_regexp = make_regexp(golden_line)
         match = golden_regexp.match(out_contents)
         if match:
