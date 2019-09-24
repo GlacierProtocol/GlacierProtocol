@@ -23,4 +23,4 @@ Enter fee rate.
 Satoshis per vbyte: Traceback (most recent call last):
   File "../../glacierscript.py", line <.*> in bitcoin_cli_checkoutput
     if retcode != 0: raise subprocess.CalledProcessError(retcode, cmd_list, output=output)
-subprocess.CalledProcessError: Command '['bitcoin-cli', '-testnet', '-rpcport=<\d+>', '-datadir=bitcoin-test-data', 'createrawtransaction', '[{"txid": "e0e9bb25fb873c4caccdc8ab743c4350310031f2cc077bb90c3f495458860157", "vout": 1}]', '{"2N93du8YobdgsHyu3qgBvSyhGUT52utMNeA": 0, "myP4xdJNwAW9iMakvCjnozg814ewgn8apx": 0}']' returned non-zero exit status 5
+subprocess.CalledProcessError: Command '['bitcoin-cli', '-testnet', '-rpcport=<\d+>', '-datadir=bitcoin-test-data', 'createrawtransaction', '[{"txid": "e0e9bb25fb873c4caccdc8ab743c4350310031f2cc077bb90c3f495458860157", "vout": 1}]', '{"2N93du8YobdgsHyu3qgBvSyhGUT52utMNeA": 0, "myP4xdJNwAW9iMakvCjnozg814ewgn8apx": 0}']' returned non-zero exit status 5<\.?>
