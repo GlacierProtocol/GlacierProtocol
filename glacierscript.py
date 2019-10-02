@@ -333,6 +333,11 @@ def require_minimum_bitcoind_version(min_version):
 def get_address_for_wif_privkey(privkey):
     """A method for retrieving the address associated with a private key from bitcoin core
        <privkey> - a bitcoin private key in WIF format"""
+    
+    # Bitcoin Core doesn't have an RPC for "get the addresses associated w/this private key"
+    # just "get the addresses associated with this label"
+    # where "label" corresponds to an arbitrary tag we can associate with each private key
+    # so, we'll generate a unique "label" to attach to this private key.
 
     label = hash_sha256(privkey)
 
