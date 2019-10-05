@@ -30,7 +30,6 @@ from decimal import Decimal
 from hashlib import sha256, md5
 import json
 import os
-import random
 import shlex
 import subprocess
 import sys
@@ -332,10 +331,8 @@ def get_address_for_wif_privkey(privkey):
     # just "get the addresses associated with this label"
     # where "label" corresponds to an arbitrary tag we can associate with each private key
     # so, we'll generate a unique "label" to attach to this private key.
-    #
-    # we're running on a fresh bitcoind installation in the Glacier Protocol, so there's no
-    # meaningful risk here of colliding with previously-existing labels.
-    label = str(random.randint(0, 2**128))
+
+    label = hash_sha256(privkey.encode('ascii'))
 
     ensure_bitcoind_running()
     bitcoin_cli_call("importprivkey", privkey, label)
