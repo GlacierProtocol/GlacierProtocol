@@ -51,14 +51,14 @@ verbose_mode = 0
 def hash_sha256(s):
     """A thin wrapper around the hashlib SHA256 library to provide a more functional interface"""
     m = sha256()
-    m.update(s)
+    m.update(s.encode('ascii'))
     return m.hexdigest()
 
 
 def hash_md5(s):
     """A thin wrapper around the hashlib md5 library to provide a more functional interface"""
     m = md5()
-    m.update(s)
+    m.update(s.encode('ascii'))
     return m.hexdigest()
 
 
@@ -332,7 +332,7 @@ def get_address_for_wif_privkey(privkey):
     # where "label" corresponds to an arbitrary tag we can associate with each private key
     # so, we'll generate a unique "label" to attach to this private key.
 
-    label = hash_sha256(privkey.encode('ascii'))
+    label = hash_sha256(privkey)
 
     ensure_bitcoind_running()
     bitcoin_cli_call("importprivkey", privkey, label)
@@ -633,10 +633,10 @@ def deposit_interactive(m, n, dice_seed_length=62, rng_seed_length=20):
         print("\nCreating private key #{}".format(index))
 
         dice_seed_string = read_dice_seed_interactive(dice_seed_length)
-        dice_seed_hash = hash_sha256(dice_seed_string.encode('ascii'))
+        dice_seed_hash = hash_sha256(dice_seed_string)
 
         rng_seed_string = read_rng_seed_interactive(rng_seed_length)
-        rng_seed_hash = hash_sha256(rng_seed_string.encode('ascii'))
+        rng_seed_hash = hash_sha256(rng_seed_string)
 
         # back to hex string
         hex_private_key = xor_hex_strings(dice_seed_hash, rng_seed_hash)
@@ -813,7 +813,7 @@ def withdraw_interactive():
     print(signed_tx["hex"])
 
     print("\nTransaction fingerprint (md5):")
-    print(hash_md5(signed_tx["hex"].encode('ascii')))
+    print(hash_md5(signed_tx["hex"]))
 
     write_and_verify_qr_code("transaction", "transaction.png", signed_tx["hex"])
 
