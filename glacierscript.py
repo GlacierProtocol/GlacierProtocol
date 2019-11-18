@@ -841,6 +841,8 @@ if __name__ == "__main__":
         "-m", type=int, help="Number of signing keys required in an m-of-n multisig address creation (default m-of-n = 1-of-2)", default=1)
     parser.add_argument(
         "-n", type=int, help="Number of total keys required in an m-of-n multisig address creation (default m-of-n = 1-of-2)", default=2)
+    parser.add_argument(
+        "--p2wsh", action="store_true", help="Generate p2wsh (native segwit) deposit address, instead of p2wsh-in-p2sh")
     parser.add_argument('--testnet', type=int, help=argparse.SUPPRESS)
     parser.add_argument('-v', '--verbose', action='store_true', help='increase output verbosity')
     args = parser.parse_args()
