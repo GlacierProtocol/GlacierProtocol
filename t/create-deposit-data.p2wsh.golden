@@ -1,0 +1,37 @@
+Are you running this on a computer WITHOUT a network connection of any kind? (y/n)?Have the wireless cards in this computer been physically removed? (y/n)?Are you running on battery power? (y/n)?Are you running on an operating system booted from a USB drive? (y/n)?Is your screen hidden from view of windows, cameras, and other people? (y/n)?Are smartphones and all other nearby devices turned off and in a Faraday bag? (y/n)?
+
+Creating 2-of-4 cold storage address.
+
+
+Creating private key #1
+Enter 62 dice rolls (example: 62543 16325 21341...) Spaces are OK, and will be ignored:
+Enter at least 40 characters of computer entropy. Spaces are OK, and will be ignored:
+
+Creating private key #2
+Enter 62 dice rolls (example: 62543 16325 21341...) Spaces are OK, and will be ignored:
+Enter at least 40 characters of computer entropy. Spaces are OK, and will be ignored:
+
+Creating private key #3
+Enter 62 dice rolls (example: 62543 16325 21341...) Spaces are OK, and will be ignored:
+Enter at least 40 characters of computer entropy. Spaces are OK, and will be ignored:
+
+Creating private key #4
+Enter 62 dice rolls (example: 62543 16325 21341...) Spaces are OK, and will be ignored:
+Enter at least 40 characters of computer entropy. Spaces are OK, and will be ignored:
+Private keys created.
+Generating 2-of-4 cold storage address...
+
+Private keys:
+Key #1: cQCrT9Ncs9729ao7jbmAWrD9z7tF64s2yKzmD6nkiLAi9sXVZWAn
+Key #2: cP65UeSDZPiTLB6CBwasWv9oJYEjRgQXhswfwcT9HscEKDcEbgy4
+Key #3: cNYaH3onqrdMffpznhMMmrHn34fuTU59w5j8LM3H42VPcUsLeXy5
+Key #4: cRoydfinDRzzRQJp5niqJWukSYTfPJQM6ytqGN6nzonaz1mafgwD
+
+Cold storage address:
+tb1qvhyx836sxvwvq0hmfkk2y9l8jfw0lpl4a89fjf6kgg6turtz0r5q8hz22g
+
+Redemption script:
+522103d14ddcfb6817f5579695bbb3eb3e185887bf2942b031e6f716343b8fe7e9e8e221028fcd46f8614b2cbf318096968242a1e22bcfb6d8f2b6dc939c8c27c347b2937b210315acb550120f4cdcb460d5c49080ab508ca4ccd8dedecac22feeac8cd017d4c121022b063ee2f22f9e1982c140fe778672c683111a796dcccdbd47bb65e3d608a98354ae
+
+QR code for cold storage address written to address.png
+QR code for redemption script written to redemption.png
