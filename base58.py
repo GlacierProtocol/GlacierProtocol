@@ -1,6 +1,6 @@
 '''Base58 encoding
 
-Implementations of Base58 and Base58Check endcodings that are compatible
+Implementations of Base58 and Base58Check encodings that are compatible
 with the bitcoin network.
 '''
 
