@@ -362,7 +362,7 @@ def get_utxos(tx, address):
     Given a transaction, find all the outputs that were sent to an address
     returns => List<Dictionary> list of UTXOs in bitcoin core format
 
-    tx - <Dictionary> in bitcoind core format
+    tx - <Dictionary> in bitcoin core format
     address - <string>
     """
     utxos = []
