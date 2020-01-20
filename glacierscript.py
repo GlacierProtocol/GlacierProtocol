@@ -119,6 +119,13 @@ def bitcoin_cli_call(*args):
     _, retcode, _ = run_subprocess("bitcoin-cli", *args)
     return retcode
 
+def bitcoin_cli_checkcall(*args):
+    """
+    Run `bitcoin-cli`, ensure no error
+    """
+    cmd_list, retcode, output = run_subprocess("bitcoin-cli", *args)
+    if retcode != 0: raise subprocess.CalledProcessError(retcode, cmd_list, output=output)
+
 
 def bitcoin_cli_checkoutput(*args):
     """
@@ -307,6 +314,8 @@ def ensure_bitcoind_running():
     while times <= 20:
         times += 1
         if bitcoin_cli_call("getnetworkinfo") == 0:
+            # getaddressinfo API changed in v0.18.0
+            require_minimum_bitcoind_version(180000)
             return
         time.sleep(0.5)
 
@@ -323,8 +332,8 @@ def require_minimum_bitcoind_version(min_version):
         print("ERROR: Your bitcoind version is too old. You have {}, I need {} or newer. Exiting...".format(networkinfo["version"], min_version))
         sys.exit()
 
-def get_address_for_wif_privkey(privkey):
-    """A method for retrieving the address associated with a private key from bitcoin core
+def get_pubkey_for_wif_privkey(privkey):
+    """A method for retrieving the pubkey associated with a private key from bitcoin core
        <privkey> - a bitcoin private key in WIF format"""
 
     # Bitcoin Core doesn't have an RPC for "get the addresses associated w/this private key"
@@ -335,7 +344,7 @@ def get_address_for_wif_privkey(privkey):
     label = hash_sha256(privkey)
 
     ensure_bitcoind_running()
-    bitcoin_cli_call("importprivkey", privkey, label)
+    bitcoin_cli_checkcall("importprivkey", privkey, label)
     addresses = bitcoin_cli_json("getaddressesbylabel", label)
 
     # getaddressesbylabel returns multiple addresses associated with
@@ -343,19 +352,41 @@ def get_address_for_wif_privkey(privkey):
     # pubkey to addmultisigaddress, it doesn't matter which one we
     # choose; they are all associated with the same pubkey.
 
-    return next(iter(addresses))
+    address = next(iter(addresses))
+
+    validate_output = bitcoin_cli_json("getaddressinfo", address)
+    return validate_output["pubkey"]
 
 
-def addmultisigaddress(m, addresses_or_pubkeys, address_type='p2sh-segwit'):
+def addmultisigaddress(m, pubkeys, address_type='p2sh-segwit'):
     """
     Call `bitcoin-cli addmultisigaddress`
     returns => JSON response from bitcoin-cli
 
     m: <int> number of multisig keys required for withdrawal
-    addresses_or_pubkeys: List<string> either addresses or hex pubkeys for each of the N keys
+    pubkeys: List<string> hex pubkeys for each of the N keys
     """
-    address_string = json.dumps(addresses_or_pubkeys)
-    return bitcoin_cli_json("addmultisigaddress", str(m), address_string, "", address_type)
+    pubkey_string = json.dumps(pubkeys)
+    return bitcoin_cli_json("addmultisigaddress", str(m), pubkey_string, "", address_type)
+
+
+def validate_address(source_address, redeem_script):
+    """
+    Given a source cold storage address and redemption script,
+    make sure the redeem script is valid and matches the address.
+    """
+    decoded_script = bitcoin_cli_json("decodescript", redeem_script)
+    if decoded_script["type"] != "multisig":
+        print("ERROR: Unrecognized redemption script. Doublecheck for typos. Exiting...")
+        sys.exit()
+    ok_addresses = [decoded_script["p2sh"]]
+    if "segwit" in decoded_script:
+        ok_addresses.append(decoded_script["segwit"]["p2sh-segwit"])
+        ok_addresses.extend(decoded_script["segwit"]["addresses"])
+    if source_address not in ok_addresses:
+        print("ERROR: Redemption script does not match cold storage address. Doublecheck for typos. Exiting...")
+        sys.exit()
+
 
 def get_utxos(tx, address):
     """
@@ -414,13 +445,60 @@ def create_unsigned_transaction(source_address, destinations, redeem_script, inp
     return tx_unsigned_hex
 
 
-def sign_transaction(source_address, keys, redeem_script, unsigned_hex, input_txs):
+def teach_address_to_wallet(source_address, redeem_script):
+    """
+    Teaches the bitcoind wallet about our multisig address, so it can
+    use that knowledge to sign the transaction we're about to create.
+
+    source_address: <string> multisig address
+    redeem_script: <string>
+    """
+
+    # If address is p2wsh-in-p2sh, then the user-provided
+    # redeem_script is actually witnessScript, and I need to get the
+    # redeemScript from `decodescript`.
+
+    decoded_script = bitcoin_cli_json("decodescript", redeem_script)
+
+    import_this = {
+        "scriptPubKey": { "address": source_address },
+        "timestamp": "now",
+        "watchonly": True # to avoid warning about "Some private keys are missing[...]"
+    }
+    if decoded_script["p2sh"] == source_address:
+        import_this["redeemscript"] = redeem_script
+    else:
+        # segwit (either p2wsh or p2sh-in-p2wsh)
+        import_this["witnessscript"] = redeem_script
+        if source_address == decoded_script["segwit"]["p2sh-segwit"]:
+            import_this["redeemscript"] = decoded_script["segwit"]["hex"]
+    results = bitcoin_cli_json("importmulti", json.dumps([import_this]))
+    if not all(result["success"] for result in results) or \
+       any("warnings" in result for result in results):
+        raise Exception("Problem importing address to wallet")
+
+
+def find_pubkeys(source_address):
+    """
+    Return a list of the pubkeys associated with the supplied multisig address.
+
+    Assumes this address has already been imported to the wallet using `importmulti`
+
+    source_address: <string> multisig address
+    """
+    out = bitcoin_cli_json("getaddressinfo", source_address)
+    if "pubkeys" in out:
+        return out["pubkeys"] # for non-segwit addresses
+    else:
+        return out["embedded"]["pubkeys"] # for segwit addresses
+
+
+def sign_transaction(source_address, redeem_script, unsigned_hex, input_txs):
     """
     Creates a signed transaction
     output => dictionary {"hex": transaction <string>, "complete": <boolean>}
 
     source_address: <string> input_txs will be filtered for utxos to this source address
-    keys: List<string> The private keys you wish to sign with
     redeem_script: <string>
     unsigned_hex: <string> The unsigned transaction, in hex format
     input_txs: List<dict> A list of input transactions to use (bitcoind decoded format)
@@ -442,12 +520,12 @@ def sign_transaction(source_address, keys, redeem_script, unsigned_hex, input_tx
             })
 
     signed_tx = bitcoin_cli_json(
-        "signrawtransactionwithkey",
-        unsigned_hex, json.dumps(keys), json.dumps(inputs))
+        "signrawtransactionwithwallet",
+        unsigned_hex, json.dumps(inputs))
     return signed_tx
 
 
-def get_fee_interactive(source_address, keys, destinations, redeem_script, input_txs):
+def get_fee_interactive(source_address, destinations, redeem_script, input_txs):
     """
     Returns a recommended transaction fee, given market fee data provided by the user interactively
     Because fees tend to be a function of transaction size, we build the transaction in order to
@@ -456,7 +534,6 @@ def get_fee_interactive(source_address, keys, destinations, redeem_script, input
 
     Parameters:
       source_address: <string> input_txs will be filtered for utxos to this source address
-      keys: A list of signing keys
       destinations: {address <string>: amount<string>} dictionary mapping destination addresses to amount in BTC
       redeem_script: String
       input_txs: List<dict> List of input transactions in dictionary form (bitcoind decoded format)
@@ -475,7 +552,7 @@ def get_fee_interactive(source_address, keys, destinations, redeem_script, input
         unsigned_tx = create_unsigned_transaction(
             source_address, destinations, redeem_script, input_txs)
 
-        signed_tx = sign_transaction(source_address, keys,
+        signed_tx = sign_transaction(source_address,
                                      redeem_script, unsigned_tx, input_txs)
 
         decoded_tx = bitcoin_cli_json("decoderawtransaction", signed_tx["hex"])
@@ -610,18 +687,18 @@ def entropy(n, length):
 #
 ################################################################################################
 
-def deposit_interactive(m, n, dice_seed_length=62, rng_seed_length=20):
+def deposit_interactive(m, n, dice_seed_length=62, rng_seed_length=20, p2wsh=False):
     """
     Generate data for a new cold storage address (private keys, address, redemption script)
     m: <int> number of multisig keys required for withdrawal
     n: <int> total number of multisig keys
     dice_seed_length: <int> minimum number of dice rolls required
     rng_seed_length: <int> minimum length of random seed required
+    p2wsh: if True, generate p2wsh instead of p2wsh-in-p2sh
     """
 
     safety_checklist()
     ensure_bitcoind_running()
-    require_minimum_bitcoind_version(170000) # getaddressesbylabel API new in v0.17.0
 
     print("\n")
     print("Creating {0}-of-{1} cold storage address.\n".format(m, n))
@@ -646,8 +723,9 @@ def deposit_interactive(m, n, dice_seed_length=62, rng_seed_length=20):
     print("Private keys created.")
     print("Generating {0}-of-{1} cold storage address...\n".format(m, n))
 
-    addresses = [get_address_for_wif_privkey(key) for key in keys]
-    results = addmultisigaddress(m, addresses)
+    pubkeys = [get_pubkey_for_wif_privkey(key) for key in keys]
+    address_type = 'bech32' if p2wsh else 'p2sh-segwit'
+    results = addmultisigaddress(m, pubkeys, address_type)
 
     print("Private keys:")
     for idx, key in enumerate(keys):
@@ -679,7 +757,6 @@ def withdraw_interactive():
 
     safety_checklist()
     ensure_bitcoind_running()
-    require_minimum_bitcoind_version(170000) # signrawtransaction API changed in v0.17.0
 
     approve = False
 
@@ -693,6 +770,10 @@ def withdraw_interactive():
         addresses[source_address] = 0
 
         redeem_script = input("\nRedemption script for source cold storage address: ")
+
+        validate_address(source_address, redeem_script)
+        teach_address_to_wallet(source_address, redeem_script)
+        pubkeys = find_pubkeys(source_address)
 
         dest_address = input("\nDestination address: ")
         addresses[dest_address] = 0
@@ -736,12 +817,18 @@ def withdraw_interactive():
         while len(keys) < key_count:
             key = input("Key #{0}: ".format(len(keys) + 1))
             keys.append(key)
+            # Teach the wallet about this key
+            pubkey = get_pubkey_for_wif_privkey(key)
+            if pubkey not in pubkeys:
+                print("ERROR: that key does not belong to this source address, exiting...")
+                sys.exit()
+
 
         ###### fees, amount, and change #######
 
         input_amount = utxo_sum
         fee = get_fee_interactive(
-            source_address, keys, addresses, redeem_script, txs)
+            source_address, addresses, redeem_script, txs)
         # Got this far
         if fee > input_amount:
             print("ERROR: Your fee is greater than the sum of your unspent transactions.  Try using larger unspent transactions. Exiting...")
@@ -803,7 +890,7 @@ def withdraw_interactive():
     unsigned_tx = create_unsigned_transaction(
         source_address, addresses, redeem_script, txs)
 
-    signed_tx = sign_transaction(source_address, keys,
+    signed_tx = sign_transaction(source_address,
                                  redeem_script, unsigned_tx, txs)
 
     print("\nSufficient private keys to execute transaction?")
@@ -841,6 +928,8 @@ if __name__ == "__main__":
         "-m", type=int, help="Number of signing keys required in an m-of-n multisig address creation (default m-of-n = 1-of-2)", default=1)
     parser.add_argument(
         "-n", type=int, help="Number of total keys required in an m-of-n multisig address creation (default m-of-n = 1-of-2)", default=2)
+    parser.add_argument(
+        "--p2wsh", action="store_true", help="Generate p2wsh (native segwit) deposit address, instead of p2wsh-in-p2sh")
     parser.add_argument('--testnet', type=int, help=argparse.SUPPRESS)
     parser.add_argument('-v', '--verbose', action='store_true', help='increase output verbosity')
     args = parser.parse_args()
@@ -855,7 +944,7 @@ if __name__ == "__main__":
         entropy(args.num_keys, args.rng)
 
     if args.program == "create-deposit-data":
-        deposit_interactive(args.m, args.n, args.dice, args.rng)
+        deposit_interactive(args.m, args.n, args.dice, args.rng, args.p2wsh)
 
     if args.program == "create-withdrawal-data":
         withdraw_interactive()
