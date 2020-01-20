@@ -610,13 +610,14 @@ def entropy(n, length):
 #
 ################################################################################################
 
-def deposit_interactive(m, n, dice_seed_length=62, rng_seed_length=20):
+def deposit_interactive(m, n, dice_seed_length=62, rng_seed_length=20, p2wsh=False):
     """
     Generate data for a new cold storage address (private keys, address, redemption script)
     m: <int> number of multisig keys required for withdrawal
     n: <int> total number of multisig keys
     dice_seed_length: <int> minimum number of dice rolls required
     rng_seed_length: <int> minimum length of random seed required
+    p2wsh: if True, generate p2wsh instead of p2wsh-in-p2sh
     """
 
     safety_checklist()
@@ -647,7 +648,8 @@ def deposit_interactive(m, n, dice_seed_length=62, rng_seed_length=20):
     print("Generating {0}-of-{1} cold storage address...\n".format(m, n))
 
     addresses = [get_address_for_wif_privkey(key) for key in keys]
-    results = addmultisigaddress(m, addresses)
+    address_type = 'bech32' if p2wsh else 'p2sh-segwit'
+    results = addmultisigaddress(m, addresses, address_type)
 
     print("Private keys:")
     for idx, key in enumerate(keys):
@@ -841,6 +843,8 @@ if __name__ == "__main__":
         "-m", type=int, help="Number of signing keys required in an m-of-n multisig address creation (default m-of-n = 1-of-2)", default=1)
     parser.add_argument(
         "-n", type=int, help="Number of total keys required in an m-of-n multisig address creation (default m-of-n = 1-of-2)", default=2)
+    parser.add_argument(
+        "--p2wsh", action="store_true", help="Generate p2wsh (native segwit) deposit address, instead of p2wsh-in-p2sh")
     parser.add_argument('--testnet', type=int, help=argparse.SUPPRESS)
     parser.add_argument('-v', '--verbose', action='store_true', help='increase output verbosity')
     args = parser.parse_args()
@@ -855,7 +859,7 @@ if __name__ == "__main__":
         entropy(args.num_keys, args.rng)
 
     if args.program == "create-deposit-data":
-        deposit_interactive(args.m, args.n, args.dice, args.rng)
+        deposit_interactive(args.m, args.n, args.dice, args.rng, args.p2wsh)
 
     if args.program == "create-withdrawal-data":
         withdraw_interactive()
