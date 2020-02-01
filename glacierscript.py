@@ -514,8 +514,9 @@ def write_and_verify_qr_code(name, filename, data):
     """
 
     subprocess.run(["qrencode", "-o", filename, data], check=True)
-    check = subprocess.check_output(
-        "zbarimg --set '*.enable=0' --set 'qr.enable=1' --quiet --raw {}".format(filename), shell=True)
+    zresults = subprocess.run(["zbarimg", "--set", "*.enable=0", "--set", "qr.enable=1",
+                              "--quiet", "--raw", filename], check=True, stdout=subprocess.PIPE)
+    check = zresults.stdout
 
     if check.decode('ascii').strip() != data:
         print("********************************************************************")
