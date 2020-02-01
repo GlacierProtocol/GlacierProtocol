@@ -816,7 +816,7 @@ def withdraw_interactive():
     print("\nTransaction fingerprint (md5):")
     print(hash_md5(signed_tx["hex"]))
 
-    write_and_verify_qr_code("transaction", "transaction.png", signed_tx["hex"])
+    write_and_verify_qr_code("transaction", "transaction.png", signed_tx["hex"].upper())
 
 
 ################################################################################################
