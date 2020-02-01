@@ -516,9 +516,9 @@ def write_and_verify_qr_code(name, filename, data):
     subprocess.run(["qrencode", "-o", filename, data], check=True)
     zresults = subprocess.run(["zbarimg", "--set", "*.enable=0", "--set", "qr.enable=1",
                               "--quiet", "--raw", filename], check=True, stdout=subprocess.PIPE)
-    check = zresults.stdout
+    qrdata = zresults.stdout.decode('ascii').strip()
 
-    if check.decode('ascii').strip() != data:
+    if qrdata != data:
         print("********************************************************************")
         print("WARNING: {} QR code could not be verified properly. This could be a sign of a security breach.".format(name))
         print("********************************************************************")
