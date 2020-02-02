@@ -504,13 +504,20 @@ def get_fee_interactive(source_address, keys, destinations, redeem_script, input
 #
 ################################################################################################
 
-def decode_qr(filename):
+def decode_one_qr(filename):
     """
     Decode a QR code from an image file, and return the decoded string.
     """
     zresults = subprocess.run(["zbarimg", "--set", "*.enable=0", "--set", "qr.enable=1",
                               "--quiet", "--raw", filename], check=True, stdout=subprocess.PIPE)
     return zresults.stdout.decode('ascii').strip()
+
+
+def decode_qr(filenames):
+    """
+    Decode a (series of) QR codes from a (series of) image file(s), and return the decoded string.
+    """
+    return ''.join(decode_one_qr(f) for f in filenames)
 
 
 def write_and_verify_qr_code(name, filename, data):
@@ -523,7 +530,8 @@ def write_and_verify_qr_code(name, filename, data):
     """
 
     subprocess.run(["qrencode", "-o", filename, data], check=True)
-    qrdata = decode_qr(filename)
+    filenames = [filename]
+    qrdata = decode_qr(filenames)
 
     if qrdata != data:
         print("********************************************************************")
