@@ -88,3 +88,5 @@ Raw signed transaction (hex):
 Transaction fingerprint (md5):
 4989f7e89d72a99d90bd641da304d5ea
 QR code for transaction written to transaction-01.png,transaction-02.png
+transaction-01.png
+transaction-02.png

@@ -5,6 +5,11 @@ set -e
 # Glacier address with uncompressed, non-segwit keys.
 
 
+# Simulate an earlier, even-larger transaction. These files should
+# get deleted by glacierscript.
+touch transaction-01.png transaction-02.png transaction-03.png
+
+
 ../../glacierscript.py --testnet=$1 create-withdrawal-data 2>&1 << INPUT
 y
 y
@@ -31,3 +36,5 @@ y
 
 y
 INPUT
+
+ls -1 transaction*.png
