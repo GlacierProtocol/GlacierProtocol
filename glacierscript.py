@@ -27,6 +27,7 @@
 import argparse
 from collections import OrderedDict
 from decimal import Decimal
+import glob
 from hashlib import sha256, md5
 import json
 import os
@@ -549,12 +550,16 @@ def write_and_verify_qr_code(name, filename, data):
     somehow qrencode can do up to 4302.
 
     """
+    # Remove any stale files, so we don't confuse user if a previous
+    # withdrawal created 3 files (or 1 file) and this one only has 2
+    base, ext = os.path.splitext(filename)
+    for deleteme in glob.glob("{}*{}".format(base, ext)):
+        os.remove(deleteme)
     MAX_QR_LEN = 4296
     if len(data) <= MAX_QR_LEN:
         write_qr_code(filename, data)
         filenames = [filename]
     else:
-        base, ext = os.path.splitext(filename)
         idx = 1
         filenames = []
         intdata = data
