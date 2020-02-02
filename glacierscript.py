@@ -520,6 +520,13 @@ def decode_qr(filenames):
     return ''.join(decode_one_qr(f) for f in filenames)
 
 
+def write_qr_code(filename, data):
+    """
+    Write one QR code.
+    """
+    subprocess.run(["qrencode", "-o", filename, data], check=True)
+
+
 def write_and_verify_qr_code(name, filename, data):
     """
     Write a QR code and then read it back to try and detect any tricksy malware tampering with it.
@@ -527,18 +534,45 @@ def write_and_verify_qr_code(name, filename, data):
     name: <string> short description of the data
     filename: <string> filename for storing the QR code
     data: <string> the data to be encoded
+
+    If data fits in a single QR code, we use filename directly. Otherwise
+    we add "-%02d" to each filename; e.g. transaction-01.png transaction-02.png.
+
+    The `qrencode` program can do this directly using "structured symbols" with
+    its -S option, but `zbarimg` doesn't recognize those at all. See:
+    https://github.com/mchehab/zbar/issues/66
+
+    It's also possible that some mobile phone QR scanners won't recognize such
+    codes. So we split it up manually here.
+
+    The theoretical limit of alphanumeric QR codes is 4296 bytes, though
+    somehow qrencode can do up to 4302.
+
     """
+    MAX_QR_LEN = 4296
+    if len(data) <= MAX_QR_LEN:
+        write_qr_code(filename, data)
+        filenames = [filename]
+    else:
+        base, ext = os.path.splitext(filename)
+        idx = 1
+        filenames = []
+        intdata = data
+        while len(intdata) > 0:
+            thisdata = intdata[0:MAX_QR_LEN]
+            intdata = intdata[MAX_QR_LEN:]
+            thisfile = "{}-{:02d}{}".format(base, idx, ext)
+            filenames.append(thisfile)
+            write_qr_code(thisfile, thisdata)
+            idx += 1
 
-    subprocess.run(["qrencode", "-o", filename, data], check=True)
-    filenames = [filename]
     qrdata = decode_qr(filenames)
-
     if qrdata != data:
         print("********************************************************************")
         print("WARNING: {} QR code could not be verified properly. This could be a sign of a security breach.".format(name))
         print("********************************************************************")
 
-    print("QR code for {0} written to {1}".format(name, filename))
+    print("QR code for {0} written to {1}".format(name, ','.join(filenames)))
 
 
 ################################################################################################
