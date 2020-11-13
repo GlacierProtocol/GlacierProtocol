@@ -555,7 +555,8 @@ def write_and_verify_qr_code(name, filename, data):
     base, ext = os.path.splitext(filename)
     for deleteme in glob.glob("{}*{}".format(base, ext)):
         os.remove(deleteme)
-    MAX_QR_LEN = 4296
+    all_upper_case = data.upper() == data
+    MAX_QR_LEN = 4200 if all_upper_case else 2800
     if len(data) <= MAX_QR_LEN:
         write_qr_code(filename, data)
         filenames = [filename]
