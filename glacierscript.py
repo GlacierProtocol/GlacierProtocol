@@ -27,6 +27,7 @@
 import argparse
 from collections import OrderedDict
 from decimal import Decimal
+import glob
 from hashlib import sha256, md5
 import json
 import os
@@ -504,6 +505,29 @@ def get_fee_interactive(source_address, keys, destinations, redeem_script, input
 #
 ################################################################################################
 
+def decode_one_qr(filename):
+    """
+    Decode a QR code from an image file, and return the decoded string.
+    """
+    zresults = subprocess.run(["zbarimg", "--set", "*.enable=0", "--set", "qr.enable=1",
+                              "--quiet", "--raw", filename], check=True, stdout=subprocess.PIPE)
+    return zresults.stdout.decode('ascii').strip()
+
+
+def decode_qr(filenames):
+    """
+    Decode a (series of) QR codes from a (series of) image file(s), and return the decoded string.
+    """
+    return ''.join(decode_one_qr(f) for f in filenames)
+
+
+def write_qr_code(filename, data):
+    """
+    Write one QR code.
+    """
+    subprocess.run(["qrencode", "-o", filename, data], check=True)
+
+
 def write_and_verify_qr_code(name, filename, data):
     """
     Write a QR code and then read it back to try and detect any tricksy malware tampering with it.
@@ -511,18 +535,50 @@ def write_and_verify_qr_code(name, filename, data):
     name: <string> short description of the data
     filename: <string> filename for storing the QR code
     data: <string> the data to be encoded
+
+    If data fits in a single QR code, we use filename directly. Otherwise
+    we add "-%02d" to each filename; e.g. transaction-01.png transaction-02.png.
+
+    The `qrencode` program can do this directly using "structured symbols" with
+    its -S option, but `zbarimg` doesn't recognize those at all. See:
+    https://github.com/mchehab/zbar/issues/66
+
+    It's also possible that some mobile phone QR scanners won't recognize such
+    codes. So we split it up manually here.
+
+    The theoretical limit of alphanumeric QR codes is 4296 bytes, though
+    somehow qrencode can do up to 4302.
+
     """
+    # Remove any stale files, so we don't confuse user if a previous
+    # withdrawal created 3 files (or 1 file) and this one only has 2
+    base, ext = os.path.splitext(filename)
+    for deleteme in glob.glob("{}*{}".format(base, ext)):
+        os.remove(deleteme)
+    all_upper_case = data.upper() == data
+    MAX_QR_LEN = 4200 if all_upper_case else 2800
+    if len(data) <= MAX_QR_LEN:
+        write_qr_code(filename, data)
+        filenames = [filename]
+    else:
+        idx = 1
+        filenames = []
+        intdata = data
+        while len(intdata) > 0:
+            thisdata = intdata[0:MAX_QR_LEN]
+            intdata = intdata[MAX_QR_LEN:]
+            thisfile = "{}-{:02d}{}".format(base, idx, ext)
+            filenames.append(thisfile)
+            write_qr_code(thisfile, thisdata)
+            idx += 1
 
-    subprocess.call("qrencode -o {0} {1}".format(filename, data), shell=True)
-    check = subprocess.check_output(
-        "zbarimg --set '*.enable=0' --set 'qr.enable=1' --quiet --raw {}".format(filename), shell=True)
-
-    if check.decode('ascii').strip() != data:
+    qrdata = decode_qr(filenames)
+    if qrdata != data:
         print("********************************************************************")
         print("WARNING: {} QR code could not be verified properly. This could be a sign of a security breach.".format(name))
         print("********************************************************************")
 
-    print("QR code for {0} written to {1}".format(name, filename))
+    print("QR code for {0} written to {1}".format(name, ','.join(filenames)))
 
 
 ################################################################################################
@@ -815,7 +871,7 @@ def withdraw_interactive():
     print("\nTransaction fingerprint (md5):")
     print(hash_md5(signed_tx["hex"]))
 
-    write_and_verify_qr_code("transaction", "transaction.png", signed_tx["hex"])
+    write_and_verify_qr_code("transaction", "transaction.png", signed_tx["hex"].upper())
 
 
 ################################################################################################
